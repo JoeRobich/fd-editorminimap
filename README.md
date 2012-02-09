@@ -5,7 +5,7 @@ Renders a miniature version of the open file in a bar to the side of the editor.
 ![Screenshot](http://dl.dropbox.com/u/3917850/images/editorminimap.png)
 
 ## Download
-[Version 0.8](http://goo.gl/etaZn)
+[Version 0.8](http://goo.gl/csLeF)
 
 ## History
 **v0.8** - Lots of changes to improve scrolling and perfromance.  
