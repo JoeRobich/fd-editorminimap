@@ -123,11 +123,35 @@ namespace EditorMiniMap
                 ScintillaMiniMap miniMap = new ScintillaMiniMap(sci, settingObject);
                 content.Controls.Add(miniMap);
             }
+            else if (e.Type == EventType.FileSwitch)
+            {
+                DockContent content = PluginBase.MainForm.CurrentDocument as DockContent;
+                if (content == null)
+                    return;
+
+                ScintillaMiniMap miniMap = GetMiniMap(content);
+                if (miniMap == null)
+                    return;
+
+                miniMap.RefreshSettings();
+            }
 		}
 		
 		#endregion
 
         #region Plugin Methods
+
+        private ScintillaMiniMap GetMiniMap(DockContent content)
+        {
+            foreach (Control control in content.Controls)
+            {
+                if (control is ScintillaMiniMap)
+                {
+                    return control as ScintillaMiniMap;
+                }
+            }
+            return null;
+        }
 
         private void ShowMiniMap(object sender, EventArgs e)
         {
@@ -155,7 +179,7 @@ namespace EditorMiniMap
         public void AddEventHandlers()
         {
             // Set events you want to listen (combine as flags)
-            EventManager.AddEventHandler(this, EventType.FileOpen);
+            EventManager.AddEventHandler(this, EventType.FileOpen | EventType.FileSwitch);
         }
 
         /// <summary>

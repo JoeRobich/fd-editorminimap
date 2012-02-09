@@ -20,6 +20,7 @@ namespace EditorMiniMap
         private int _lastPosition = -1;
         private int _lastAnchor = -1;
         private bool _updating = false;
+        private bool _mouseDownOutside = false;
         private Settings _settings = null;
         private Timer _updateTimer;
 
@@ -43,6 +44,8 @@ namespace EditorMiniMap
             // Hide Folding
             this.SetMarginWidthN(2, 0);
 
+            this.TabWidth = partnerControl.TabWidth;
+
             this.CaretStyle = (int)ScintillaNet.Enums.CaretStyle.Invisible;
             this.IsMouseDownCaptures = true;
             this.IsBraceMatching = false;
@@ -56,6 +59,7 @@ namespace EditorMiniMap
 
             HookEvents();
             UpdateTimer();
+            RefreshSettings();
         }
 
         private void HookEvents()
@@ -74,6 +78,13 @@ namespace EditorMiniMap
                 _partnerControl.UpdateUI -= new UpdateUIHandler(_partnerControl_UpdateUI);
         }
 
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            _updateTimer.Stop();
+            UnhookEvents();
+        }
+
         void _partnerControl_UpdateUI(ScintillaControl sender)
         {
             if (this.Visible && !_updating)
@@ -84,14 +95,14 @@ namespace EditorMiniMap
         {
             if (_partnerControl != null)
             {
-                if (this.Visible)
+                if (_settings.IsVisible)
                     _updateTimer.Start();
                 else
                     _updateTimer.Stop();
             }
         }
 
-        void  _updateTimer_Tick(object sender, EventArgs e)
+        void _updateTimer_Tick(object sender, EventArgs e)
         {
             bool forceUpdate = false;
 
@@ -105,7 +116,7 @@ namespace EditorMiniMap
             {
                 Point mousePosition = new Point(Control.MousePosition.X, Control.MousePosition.Y);
                 Point cursorPosition = this.PointToClient(mousePosition);
-                if (this.ClientRectangle.Contains(cursorPosition))
+                if (this.ClientRectangle.Contains(cursorPosition) && !_mouseDownOutside)
                 {
                     int position = this.PositionFromPoint(cursorPosition.X, cursorPosition.Y);
 
@@ -120,6 +131,14 @@ namespace EditorMiniMap
                             this.SetSel(position, position);
                     }
                 }
+                else
+                {
+                    _mouseDownOutside = true;
+                }
+            }
+            else
+            {
+                _mouseDownOutside = false;
             }
 
             UpdateMiniMap(forceUpdate);
@@ -148,10 +167,10 @@ namespace EditorMiniMap
             return changed;
         }
 
-        void _settings_OnSettingsChanged()
+        public void RefreshSettings()
         {
             if (this.Visible != _settings.IsVisible)
-            { 
+            {
                 this.Visible = _settings.IsVisible;
 
                 if (this.Visible)
@@ -173,8 +192,13 @@ namespace EditorMiniMap
 
             if (this.Width != _settings.Width)
                 this.Width = _settings.Width;
-        
+
             UpdateMiniMap(true);
+        }
+
+        void _settings_OnSettingsChanged()
+        {
+            RefreshSettings();
         }
 
         private void ScrollHighlight(int line)
