@@ -14,25 +14,50 @@ namespace EditorMiniMap
 {
     public class ScintillaMiniMap : ScintillaControl
     {
-        private ScintillaControl _partnerControl = null;
-        private int _lastFirstVisibleLine = -1;
-        private int _lastLinesOnScreen = -1;
-        private int _lastPosition = -1;
-        private int _lastAnchor = -1;
-        private bool _updating = false;
-        private bool _mouseDownOutside = false;
+        private ScintillaControl _partnerEditor = null;
         private Settings _settings = null;
         private Timer _updateTimer;
 
-        public ScintillaMiniMap(ScintillaControl partnerControl, Settings settings)
-        {
-            this.Visible = settings.IsVisible;
-            this.Width = settings.Width;
-            this.Dock = settings.Position == MiniMapPosition.Right ? System.Windows.Forms.DockStyle.Right :
-                                                                     System.Windows.Forms.DockStyle.Left;
+        // Track the last visible lines
+        private int _lastPartnerFirstLine = -1;
+        private int _lastPartnerLinesOnScreen = -1;
+        private int _lastCenterLine = -1;
+        
+        // Ignore changes when updating
+        private bool _updating = false;
 
+        // Track mouse clicks
+        private bool _mouseDownInside = false;
+        private bool _mouseDownOutside = false;
+
+        public ScintillaMiniMap(ScintillaControl partnerEditor, Settings settings)
+        {
+            InitializeMiniMap();
+
+            _settings = settings;
+            _partnerEditor = partnerEditor;
+
+            // Update timer for looking a mouse events on MiniMap and keeping the two control in sync
+            _updateTimer = new Timer();
+            _updateTimer.Interval = 100;
+
+            // Visibilty no matching will force an update in RefreshSettings
+            this.Visible = !_settings.IsVisible;
+
+            // Match tab width
+            this.TabWidth = _partnerEditor.TabWidth;
+
+            HookEvents();
+            UpdateTimer();
+            RefreshSettings();
+        }
+
+        private void InitializeMiniMap()
+        {
+            // These will get corrected in RefreshSettings
+            this.Width = 200;
+            this.Dock = System.Windows.Forms.DockStyle.Right;
             // Make non-editable
-            this.IsReadOnly = true;
             this.Enabled = false;
             // Hide Scrollbars
             this.IsHScrollBar = false;
@@ -43,39 +68,6 @@ namespace EditorMiniMap
             this.SetMarginWidthN(1, 0);
             // Hide Folding
             this.SetMarginWidthN(2, 0);
-
-            this.TabWidth = partnerControl.TabWidth;
-
-            this.CaretStyle = (int)ScintillaNet.Enums.CaretStyle.Invisible;
-            this.IsMouseDownCaptures = true;
-            this.IsBraceMatching = false;
-            this.UsePopUp(false);
-
-            _updateTimer = new Timer();
-            _updateTimer.Interval = 100;
-
-            _settings = settings;
-            _partnerControl = partnerControl;
-
-            HookEvents();
-            UpdateTimer();
-            RefreshSettings();
-        }
-
-        private void HookEvents()
-        {
-            _updateTimer.Tick += new EventHandler(_updateTimer_Tick);
-            _settings.OnSettingsChanged += new SettingsChangesEvent(_settings_OnSettingsChanged);
-            _partnerControl.UpdateUI += new UpdateUIHandler(_partnerControl_UpdateUI);
-        }
-
-        private void UnhookEvents()
-        {
-            _updateTimer.Tick -= new EventHandler(_updateTimer_Tick);
-            _settings.OnSettingsChanged -= new SettingsChangesEvent(_settings_OnSettingsChanged);
-
-            if (!_settings.OnlyUpdateOnTimer)
-                _partnerControl.UpdateUI -= new UpdateUIHandler(_partnerControl_UpdateUI);
         }
 
         protected override void Dispose(bool disposing)
@@ -85,108 +77,42 @@ namespace EditorMiniMap
             UnhookEvents();
         }
 
-        void _partnerControl_UpdateUI(ScintillaControl sender)
+        private void HookEvents()
         {
-            if (this.Visible && !_updating)
-                UpdateMiniMap(false);
+            _updateTimer.Tick += new EventHandler(_updateTimer_Tick);
+            _settings.OnSettingsChanged += new SettingsChangesEvent(_settings_OnSettingsChanged);
+            // UpdateUI is used to track changes in the scroll position more closely than the UpdateTimer
+            if (!_settings.OnlyUpdateOnTimer)
+                _partnerEditor.UpdateUI += new UpdateUIHandler(_partnerControl_UpdateUI);
         }
 
-        private void UpdateTimer()
+        private void UnhookEvents()
         {
-            if (_partnerControl != null)
-            {
-                if (_settings.IsVisible)
-                    _updateTimer.Start();
-                else
-                    _updateTimer.Stop();
-            }
-        }
-
-        void _updateTimer_Tick(object sender, EventArgs e)
-        {
-            bool forceUpdate = false;
-
-            if (UpdateVisibleLines())
-                forceUpdate = true;
-
-            if (this.Text != _partnerControl.Text)
-                forceUpdate = true;
-
-            if (Control.MouseButtons == MouseButtons.Left)
-            {
-                Point mousePosition = new Point(Control.MousePosition.X, Control.MousePosition.Y);
-                Point cursorPosition = this.PointToClient(mousePosition);
-                IntPtr activeHwnd = NativeMethods.WindowFromPoint(mousePosition);
-
-                if (activeHwnd == this.Parent.Handle && 
-                    this.ClientRectangle.Contains(cursorPosition) && 
-                    !_mouseDownOutside)
-                {
-                    int position = this.PositionFromPoint(cursorPosition.X, cursorPosition.Y);
-
-                    if (_lastPosition != position)
-                    {
-                        _lastPosition = position;
-
-                        int scrollLine = this.LineFromPosition(position);
-                        ScrollHighlight(scrollLine);
-
-                        if (this.SelectionStart != this.SelectionEnd)
-                            this.SetSel(position, position);
-                    }
-                }
-                else
-                {
-                    _mouseDownOutside = true;
-                }
-            }
-            else
-            {
-                _mouseDownOutside = false;
-            }
-
-            UpdateMiniMap(forceUpdate);
-        }
-
-        bool UpdateVisibleLines()
-        {
-            bool changed = false;
-
-            for (int index = 0; index < _partnerControl.LineCount; index++)
-            {
-                bool visible = GetLineVisible(this, index);
-                bool parentVisible = GetLineVisible(_partnerControl, index);
-                if (parentVisible && !visible)
-                {
-                    this.ShowLines(index, index);
-                    changed = true;
-                }
-                else if (!parentVisible && visible)
-                {
-                    this.HideLines(index, index);
-                    changed = true;
-                }
-            }
-
-            return changed;
+            _updateTimer.Tick -= new EventHandler(_updateTimer_Tick);
+            _settings.OnSettingsChanged -= new SettingsChangesEvent(_settings_OnSettingsChanged);
+            _partnerEditor.UpdateUI -= new UpdateUIHandler(_partnerControl_UpdateUI);
         }
 
         public void RefreshSettings()
         {
+            // Has the visibility changed?
             if (this.Visible != _settings.IsVisible)
             {
                 this.Visible = _settings.IsVisible;
 
+                // If we are newly visible the update folded code in the mini map
                 if (this.Visible)
-                    UpdateVisibleLines();
+                    UpdateFoldedCode();
 
                 UpdateTimer();
             }
 
-            _partnerControl.UpdateUI -= new UpdateUIHandler(_partnerControl_UpdateUI);
+            // Only hook update ui if requested to
+            _partnerEditor.UpdateUI -= new UpdateUIHandler(_partnerControl_UpdateUI);
             if (!_settings.OnlyUpdateOnTimer)
-                _partnerControl.UpdateUI += new UpdateUIHandler(_partnerControl_UpdateUI);
+                _partnerEditor.UpdateUI += new UpdateUIHandler(_partnerControl_UpdateUI);
 
+            // Update dock position if necessary
             if (_settings.Position == MiniMapPosition.Right &&
                 this.Dock == System.Windows.Forms.DockStyle.Left)
                 this.Dock = System.Windows.Forms.DockStyle.Right;
@@ -197,6 +123,7 @@ namespace EditorMiniMap
             if (this.Width != _settings.Width)
                 this.Width = _settings.Width;
 
+            // Force update of the mini map since the settings have changed
             UpdateMiniMap(true);
         }
 
@@ -205,14 +132,116 @@ namespace EditorMiniMap
             RefreshSettings();
         }
 
-        private void ScrollHighlight(int line)
+        void _partnerControl_UpdateUI(ScintillaControl sender)
         {
-            int firstVisibleLine = Math.Min(Math.Max(line - GetHalfVisibleLines(_partnerControl), 0), _partnerControl.LineCount - _lastLinesOnScreen + 1);
-            if (firstVisibleLine != _lastFirstVisibleLine)
+            // Since this event occurs so often, only perform a minimal update if we are visible.
+            if (this.Visible && !_updating)
+                UpdateMiniMap(false);
+        }
+
+        private void UpdateTimer()
+        {
+            // No need to make updates if we are not visible
+            if (_settings.IsVisible)
+                _updateTimer.Start();
+            else
+                _updateTimer.Stop();
+        }
+
+        void _updateTimer_Tick(object sender, EventArgs e)
+        {
+            HandleMouseEvents();
+            UpdateMiniMap(false);
+        }
+
+        void HandleMouseEvents()
+        {
+            // Check for mouse events the hard way since the scintilla control was not giving us
+            // mouse events even when this.IsMouseDownCaptures is true.
+            if (Control.MouseButtons == MouseButtons.Left)
             {
-                int delta = firstVisibleLine - _lastFirstVisibleLine - 1;
-                _lastFirstVisibleLine = Math.Max(firstVisibleLine, 1);
-                _partnerControl.LineScroll(0, delta);
+                // Get the mouse position relative to the client.
+                Point screenPosition = new Point(Control.MousePosition.X, Control.MousePosition.Y);
+                Point clientPosition = this.PointToClient(screenPosition);
+                // Check that the mouse is clicking on us
+                IntPtr activeHwnd = NativeMethods.WindowFromPoint(screenPosition);
+
+                // if the mouse is clicking on us, is within the mini map bounds, 
+                // and the click started within the mini map
+                if (activeHwnd == this.Parent.Handle &&
+                    this.ClientRectangle.Contains(clientPosition) &&
+                    !_mouseDownOutside)
+                {
+                    // get the cursor position under the mouse
+                    int position = this.PositionFromPoint(clientPosition.X, clientPosition.Y);
+                    int centerLine = this.LineFromPosition(position);
+                    // if it does not match our last position
+                    if (_lastCenterLine != centerLine)
+                    {
+                        // Center the partner editor on the cursor line
+                        CenterPartnerEditor(centerLine);
+
+                        _lastCenterLine = centerLine;
+                    }
+                    _mouseDownInside = true;
+                }
+                else
+                {
+                    // The click didn't apply to us
+                    if (!_mouseDownInside)
+                        _mouseDownOutside = true;
+                }
+            }
+            else if (_mouseDownInside || _mouseDownOutside)
+            {
+                // The mouse isn't down, so reset flags
+                _mouseDownInside = false;
+                _mouseDownOutside = false;
+            }
+        }
+
+        bool UpdateFoldedCode()
+        {
+            bool changed = false;
+
+            // Go line by line updating line visibility. Would prefer a CodeFoldsChanged event.
+            for (int index = 0; index < _partnerEditor.LineCount; index++)
+            {
+                bool visible = GetLineVisible(this, index);
+                bool parterVisible = GetLineVisible(_partnerEditor, index);
+
+                // if visibility doesn't match the update
+                if (parterVisible && !visible)
+                {
+                    this.ShowLines(index, index);
+                    changed = true;
+                }
+                else if (!parterVisible && visible)
+                {
+                    this.HideLines(index, index);
+                    changed = true;
+                }
+            }
+
+            return changed;
+        }
+
+        private bool GetLineVisible(ScintillaControl sci, int line)
+        {
+            // for some reason IsLineVisible was a property, but there was no way to specify which line...
+            return sci.SlowPerform(2228, (uint)line, 0) != 0;
+        }
+
+        private void CenterPartnerEditor(int line)
+        {
+            // Constrain the first visible line to a reasonable number
+            int firstVisibleLine = Math.Min(Math.Max(line - (int)Math.Floor(_partnerEditor.LinesOnScreen / 2.0), 0), _partnerEditor.LineCount - _lastPartnerLinesOnScreen + 1);
+            if (firstVisibleLine != _lastPartnerFirstLine)
+            {
+                // Calculate shift then scroll
+                int delta = firstVisibleLine - _lastPartnerFirstLine - 1;
+                _lastPartnerFirstLine = Math.Max(firstVisibleLine, 1);
+                _partnerEditor.LineScroll(0, delta);
             }
         }
 
@@ -223,54 +252,60 @@ namespace EditorMiniMap
 
             _updating = true;
 
-            // Update Language
-            if (this.ConfigurationLanguage != _partnerControl.ConfigurationLanguage)
-                this.ConfigurationLanguage = _partnerControl.ConfigurationLanguage;
+            // If folded code has changed then perform a full update.
+            if (UpdateFoldedCode())
+                forceUpdate = true;
 
-            if (this.Text != _partnerControl.Text)
+            // Update syntax language if changed
+            if (this.ConfigurationLanguage != _partnerEditor.ConfigurationLanguage)
+                this.ConfigurationLanguage = _partnerEditor.ConfigurationLanguage;
+
+            // Update text if it has changed
+            if (this.Text != _partnerEditor.Text)
             {
-                this.IsReadOnly = false;
-                this.Text = _partnerControl.Text;
-                this.IsReadOnly = true;
+                this.Text = _partnerEditor.Text;
 
-                int centerLine = _partnerControl.FirstVisibleLine + GetHalfVisibleLines(_partnerControl);
-                this.GotoLine(centerLine);
-                _lastPosition = this.CurrentPos;
-                _lastAnchor = this.CurrentPos;
                 forceUpdate = true;
             }
 
-            // Update Zoom Level
+            // Get the default style font size
             int fontSize = GetDefaultFontSize();
             if (fontSize > _settings.FontSize)
             {
+                // zoom level is the delta of the default and target font sizes
                 int zoomLevel = -(fontSize - _settings.FontSize);
                 if (this.ZoomLevel != zoomLevel)
                     this.ZoomLevel = zoomLevel;
             }
 
-            // Check to see if we have scrolled or resized or...
-            int firstLine = _partnerControl.FirstVisibleLine;
-            int numberLines = _partnerControl.LinesOnScreen;
+            int firstLine = _partnerEditor.FirstVisibleLine;
+            int linesOnScreen = _partnerEditor.LinesOnScreen;
 
-            if (firstLine != _lastFirstVisibleLine ||
-                numberLines != _lastLinesOnScreen || 
+            // Check to see if we have scrolled or resized or...
+            if (firstLine != _lastPartnerFirstLine ||
+                linesOnScreen != _lastPartnerLinesOnScreen || 
                 forceUpdate)
             {
-                // Update Visible Line Highlights
+                // Remove old line highlight
                 this.MarkerDeleteAll(20);
+
+                // Define the highlight marker
                 this.MarkerSetBack(20, PluginCore.Utilities.DataConverter.ColorToInt32(_settings.HighlightColor));
                 this.MarkerDefine(20, ScintillaNet.Enums.MarkerSymbol.Background);
-                int lastLine = this.DocLineFromVisible(firstLine + numberLines);
+
+                // Add the visible lines highlight
+                int lastLine = this.DocLineFromVisible(firstLine + linesOnScreen);
                 for (int line = firstLine; line < lastLine; line++)
                 {
                     this.MarkerAdd(line, 20);
                 }
-
+                
+                // When visible lines < line count, apply a continuous scroll so that all lines can be visible
                 ScrollMiniMap();
 
-                _lastFirstVisibleLine = firstLine;
-                _lastLinesOnScreen = numberLines;
+                _lastPartnerFirstLine = firstLine;
+                _lastPartnerLinesOnScreen = linesOnScreen;
+                _lastCenterLine = _lastPartnerFirstLine + (int)Math.Floor(_lastPartnerLinesOnScreen / 2.0);
             }
 
             _updating = false;
@@ -278,9 +313,11 @@ namespace EditorMiniMap
 
         private void ScrollMiniMap()
         {
+            // If there is more lines that can fit on the screen
             if (this.LineCount > this.LinesOnScreen)
             {
-                double percent = _lastFirstVisibleLine / Convert.ToDouble(_partnerControl.LineCount - _lastLinesOnScreen);
+                // Apply a continuous scroll, so that all lines will eventually be visible
+                double percent = _lastPartnerFirstLine / Convert.ToDouble(_partnerEditor.LineCount - _lastPartnerLinesOnScreen);
                 int line = (int)Math.Floor(percent * (this.LineCount - this.LinesOnScreen));
                 int delta = line - this.FirstVisibleLine - 1;
                 this.LineScroll(0, delta);
@@ -296,21 +333,12 @@ namespace EditorMiniMap
             if (language == null)
                 return 0;
            
+            // find the default style and return the font size for this syntax configuration
             foreach (UseStyle style in PluginBase.MainForm.SciConfig.GetLanguage(this.ConfigurationLanguage).usestyles)
                 if (style.name == "default")
                     return style.FontSize;
 
             return 0;
-        }
-
-        private int GetHalfVisibleLines(ScintillaControl sci)
-        {
-            return (int)Math.Floor(Convert.ToDouble(sci.LinesOnScreen) / 2);
-        }
-
-        private bool GetLineVisible(ScintillaControl sci, int line)
-        {
-            return sci.SlowPerform(2228, (uint)line, 0) != 0;
         }
     }
 }
