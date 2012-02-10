@@ -15,7 +15,7 @@ namespace EditorMiniMap
         [field: NonSerialized]
         public event SettingsChangesEvent OnSettingsChanged;
 
-        private const int DEFAULT_FONT_SIZE = 3;
+        private const int DEFAULT_FONT_SIZE = 2;
         private const bool DEFAULT_IS_VISIBLE = true;
         private const int DEFAULT_WIDTH = 200;
         private const MiniMapPosition DEFAULT_POSITION = MiniMapPosition.Right;
@@ -56,7 +56,11 @@ namespace EditorMiniMap
             {
                 if (fontSize != value)
                 {
-                    fontSize = value;
+                    if (value >= DEFAULT_FONT_SIZE)
+                        fontSize = value;
+                    else
+                        fontSize = DEFAULT_FONT_SIZE;
+
                     FireChanged();
                 }
             }
