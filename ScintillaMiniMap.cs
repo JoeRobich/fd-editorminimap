@@ -116,7 +116,11 @@ namespace EditorMiniMap
             {
                 Point mousePosition = new Point(Control.MousePosition.X, Control.MousePosition.Y);
                 Point cursorPosition = this.PointToClient(mousePosition);
-                if (this.ClientRectangle.Contains(cursorPosition) && !_mouseDownOutside)
+                IntPtr activeHwnd = NativeMethods.WindowFromPoint(mousePosition);
+
+                if (activeHwnd == this.Parent.Handle && 
+                    this.ClientRectangle.Contains(cursorPosition) && 
+                    !_mouseDownOutside)
                 {
                     int position = this.PositionFromPoint(cursorPosition.X, cursorPosition.Y);
 
