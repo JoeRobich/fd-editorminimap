@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 
 namespace EditorMiniMap
 {
-    internal class NativeMethods
+    internal class Win32
     {
         [DllImport("user32.dll")]
         public static extern IntPtr WindowFromPoint(POINT Point);

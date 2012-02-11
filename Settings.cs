@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Windows.Forms;
 using System.Text;
 using System.Drawing;
+using EditorMiniMap.Localization;
 
 namespace EditorMiniMap
 {
@@ -20,6 +21,8 @@ namespace EditorMiniMap
         private const int DEFAULT_WIDTH = 200;
         private const MiniMapPosition DEFAULT_POSITION = MiniMapPosition.Right;
         private const bool DEFAULT_ONLY_UPDATE_ON_TIMER = false;
+        private const bool DEFAULT_SHOW_TOOLBAR_BUTTON = false;
+        private const int DEFAULT_MAX_LINE_LIMIT = 5000;
 
         private Color highlightColor = Color.LightGray;
         private int fontSize = DEFAULT_FONT_SIZE;
@@ -27,10 +30,12 @@ namespace EditorMiniMap
         private int width = DEFAULT_WIDTH;
         private MiniMapPosition position = DEFAULT_POSITION;
         private bool onlyUpdateOnTimer = DEFAULT_ONLY_UPDATE_ON_TIMER;
+        private bool showToolbarButton = DEFAULT_SHOW_TOOLBAR_BUTTON;
+        private int _maxLineLimit = DEFAULT_MAX_LINE_LIMIT;
 
-        [Category("MiniMap")]
-        [DisplayName("Highlight color for the visible lines")]
-        [Description("The background color to highlight the visible lines with.")]
+        [LocalizedCategory("EditorMiniMap.Category.UI")]
+        [LocalizedDisplayName("EditorMiniMap.Label.HighlightColor")]
+        [LocalizedDescription("EditorMiniMap.Description.HighlightColor")]
         [DefaultValue(typeof(Color), "LightGray")]
         public Color HighlightColor
         {
@@ -45,68 +50,49 @@ namespace EditorMiniMap
             }
         }
 
-        [Category("MiniMap")]
-        [DisplayName("Target font size")]
-        [Description("The target font size for default text.")]
+        [LocalizedCategory("EditorMiniMap.Category.UI")]
+        [LocalizedDisplayName("EditorMiniMap.Label.FontSize")]
+        [LocalizedDescription("EditorMiniMap.Description.FontSize")]
         [DefaultValue(DEFAULT_FONT_SIZE)]
         public int FontSize
         {
             get { return fontSize; }
             set
             {
+                if (value < 2)
+                    value = DEFAULT_FONT_SIZE;
+
                 if (fontSize != value)
                 {
-                    if (value >= DEFAULT_FONT_SIZE)
-                        fontSize = value;
-                    else
-                        fontSize = DEFAULT_FONT_SIZE;
-
+                    fontSize = value;
                     FireChanged();
                 }
             }
         }
 
-        [Category("MiniMap")]
-        [DisplayName("Is Visible")]
-        [Description("Whether or not to display the mini map.")]
-        [DefaultValue(DEFAULT_IS_VISIBLE)]
-        public bool IsVisible
-        {
-            get { return isVisible; }
-            set
-            {
-                if (isVisible != value)
-                {
-                    isVisible = value;
-                    FireChanged();
-                }
-            }
-        }
-
-        [Category("MiniMap")]
-        [DisplayName("Width")]
-        [Description("How wide the mini map should be.")]
+        [LocalizedCategory("EditorMiniMap.Category.UI")]
+        [LocalizedDisplayName("EditorMiniMap.Label.Width")]
+        [LocalizedDescription("EditorMiniMap.Description.Width")]
         [DefaultValue(DEFAULT_WIDTH)]
         public int Width
         {
             get { return width; }
             set
             {
+                if (value < 1)
+                    value = DEFAULT_WIDTH;
+
                 if (width != value)
                 {
-                    if (value > 0)
-                        width = value;
-                    else
-                        width = DEFAULT_WIDTH;
-
+                    width = value;
                     FireChanged();
                 }
             }
         }
 
-        [Category("MiniMap")]
-        [DisplayName("Position")]
-        [Description("Whether the mini map should be on the left or right of the editor.")]
+        [LocalizedCategory("EditorMiniMap.Category.UI")]
+        [LocalizedDisplayName("EditorMiniMap.Label.Position")]
+        [LocalizedDescription("EditorMiniMap.Description.Position")]
         [DefaultValue(DEFAULT_POSITION)]
         public MiniMapPosition Position
         {
@@ -121,9 +107,9 @@ namespace EditorMiniMap
             }
         }
 
-        [Category("MiniMap")]
-        [DisplayName("Only update on timer")]
-        [Description("If you are experiencing performance issues this will reduce updates.")]
+        [LocalizedCategory("EditorMiniMap.Category.Performance")]
+        [LocalizedDisplayName("EditorMiniMap.Label.UpdateOnTimer")]
+        [LocalizedDescription("EditorMiniMap.Description.UpdateOnTimer")]
         [DefaultValue(DEFAULT_ONLY_UPDATE_ON_TIMER)]
         public bool OnlyUpdateOnTimer
         {
@@ -133,6 +119,60 @@ namespace EditorMiniMap
                 if (onlyUpdateOnTimer != value)
                 {
                     onlyUpdateOnTimer = value;
+                    FireChanged();
+                }
+            }
+        }
+
+        [LocalizedCategory("EditorMiniMap.Category.Performance")]
+        [LocalizedDisplayName("EditorMiniMap.Label.MaxLineLimit")]
+        [LocalizedDescription("EditorMiniMap.Description.MaxLineLimit")]
+        [DefaultValue(DEFAULT_MAX_LINE_LIMIT)]
+        public int MaxLineLimit
+        {
+            get { return _maxLineLimit; }
+            set
+            {
+                if (value < 1)
+                    value = DEFAULT_MAX_LINE_LIMIT;
+
+                if (_maxLineLimit != value)
+                {
+                    _maxLineLimit = value;
+                    FireChanged();
+                }
+            }
+        }
+
+        [LocalizedCategory("EditorMiniMap.Category.Visibility")]
+        [LocalizedDisplayName("EditorMiniMap.Label.IsVisible")]
+        [LocalizedDescription("EditorMiniMap.Description.IsVisible")]
+        [DefaultValue(DEFAULT_IS_VISIBLE)]
+        public bool IsVisible
+        {
+            get { return isVisible; }
+            set
+            {
+                if (isVisible != value)
+                {
+                    isVisible = value;
+                    FireChanged();
+                }
+            }
+        }
+
+        [LocalizedCategory("EditorMiniMap.Category.Visibility")]
+        [LocalizedDisplayName("EditorMiniMap.Label.ShowToolbarButton")]
+        [LocalizedDescription("EditorMiniMap.Description.ShowToolbarButton")]
+        [DefaultValue(DEFAULT_SHOW_TOOLBAR_BUTTON)]
+        public bool ShowToolbarButton
+        {
+            get { return showToolbarButton; }
+            set
+            {
+                if (showToolbarButton != value)
+                {
+                    showToolbarButton = value;
                     FireChanged();
                 }
             }

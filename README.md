@@ -5,9 +5,10 @@ Renders a miniature version of the open file in a bar to the side of the editor.
 ![Screenshot](http://dl.dropbox.com/u/3917850/images/editorminimap.png)
 
 ## Download
-[Version 0.8](http://goo.gl/csLeF)
+[Version 0.9](http://goo.gl/csLeF)
 
 ## History
+**v0.9** - Added optional toolbar button for toggling the mini map. If you have problems with large files, I added a configurable line limit. Fixed some synchronization and stability issues.
 **v0.8** - Lots of changes to improve scrolling and perfromance.  
 **v0.1** - Initial creation  
 

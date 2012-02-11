@@ -2,26 +2,30 @@ using System;
 using System.IO;
 using System.Windows.Forms;
 using System.ComponentModel;
-using WeifenLuo.WinFormsUI.Docking;
 using PluginCore.Localization;
 using PluginCore.Utilities;
 using PluginCore.Managers;
-using PluginCore.Helpers;
 using PluginCore;
 using System.Drawing;
 using System.Runtime.InteropServices;
+using EditorMiniMap.Helpers;
 
 namespace EditorMiniMap
 {
 	public class PluginMain : IPlugin
 	{
-        private String pluginName = "EditorMiniMap";
-        private String pluginGuid = "1F4B503B-E512-4a2d-B80D-15C87DD6D5FA";
-        private String pluginHelp = "www.flashdevelop.org/community/";
-        private String pluginDesc = "Adds a minimap to code documents.";
-        private String pluginAuth = "Joey Robichaud";
-        private String settingFilename = "";
-        private Settings settingObject;
+        private const int API_KEY = 1;
+        private const String NAME = "EditorMiniMap";
+        private const String GUID = "1F4B503B-E512-4a2d-B80D-15C87DD6D5FA";
+        private const String HELP = "www.flashdevelop.org/community/viewtopic.php?f=4&t=9397";
+        private const String DESCRIPTION = "Adds a minimap to code documents.";
+        private const String AUTHOR = "Joey Robichaud";
+
+        private String _settingsFilename = "";
+        private Settings _settings = null;
+        private ToolStripSeparator _toggleSeparator = null;
+        private ToolStripMenuItem _toggleMenuItem = null;
+        private ToolStripButton _toggleButton = null;
 
 	    #region Required Properties
 
@@ -30,7 +34,7 @@ namespace EditorMiniMap
         /// </summary>
         public Int32 Api
         {
-            get { return 1; }
+            get { return API_KEY; }
         }
 
         /// <summary>
@@ -38,7 +42,7 @@ namespace EditorMiniMap
         /// </summary> 
         public String Name
 		{
-			get { return this.pluginName; }
+			get { return NAME; }
 		}
 
         /// <summary>
@@ -46,7 +50,7 @@ namespace EditorMiniMap
         /// </summary>
         public String Guid
 		{
-			get { return this.pluginGuid; }
+			get { return GUID; }
 		}
 
         /// <summary>
@@ -54,7 +58,7 @@ namespace EditorMiniMap
         /// </summary> 
         public String Author
 		{
-			get { return this.pluginAuth; }
+			get { return AUTHOR; }
 		}
 
         /// <summary>
@@ -62,7 +66,7 @@ namespace EditorMiniMap
         /// </summary> 
         public String Description
 		{
-			get { return this.pluginDesc; }
+			get { return DESCRIPTION; }
 		}
 
         /// <summary>
@@ -70,7 +74,7 @@ namespace EditorMiniMap
         /// </summary> 
         public String Help
 		{
-			get { return this.pluginHelp; }
+			get { return HELP; }
 		}
 
         /// <summary>
@@ -79,7 +83,7 @@ namespace EditorMiniMap
         [Browsable(false)]
         public Object Settings
         {
-            get { return this.settingObject; }
+            get { return this._settings; }
         }
 		
 		#endregion
@@ -93,7 +97,7 @@ namespace EditorMiniMap
 		{
             this.InitBasics();
             this.LoadSettings();
-            this.AddShortCuts();
+            this.CreateMenuItems();
             this.AddEventHandlers();
         }
 		
@@ -112,24 +116,24 @@ namespace EditorMiniMap
 		{
             if (e.Type == EventType.FileOpen)
             {
-                DockContent content = PluginBase.MainForm.CurrentDocument as DockContent;
-                if (content == null)
+                ITabbedDocument document = PluginBase.MainForm.CurrentDocument;
+                if (document == null)
                     return;
-
-                ScintillaNet.ScintillaControl sci = PluginBase.MainForm.CurrentDocument.SciControl;
+                // If the main form does not contain a Scintilla control, 
+                // then there is no need to add a mini map.
+                ScintillaNet.ScintillaControl sci = document.SciControl;
                 if (sci == null)
                     return;
 
-                ScintillaMiniMap miniMap = new ScintillaMiniMap(sci, settingObject);
-                content.Controls.Add(miniMap);
+                ScintillaMiniMap miniMap = new ScintillaMiniMap(sci, _settings);
+                document.Controls.Add(miniMap);
             }
             else if (e.Type == EventType.FileSwitch)
             {
-                DockContent content = PluginBase.MainForm.CurrentDocument as DockContent;
-                if (content == null)
-                    return;
-
-                ScintillaMiniMap miniMap = GetMiniMap(content);
+                // Scintilla control Visible property does not seem to respect getting set when
+                // the control is not visible. So when switching to a new document, we have to
+                // refresh the settings.
+                ScintillaMiniMap miniMap = GetMiniMap(PluginBase.MainForm.CurrentDocument);
                 if (miniMap == null)
                     return;
 
@@ -141,22 +145,39 @@ namespace EditorMiniMap
 
         #region Plugin Methods
 
-        private ScintillaMiniMap GetMiniMap(DockContent content)
+        private ScintillaMiniMap GetMiniMap(ITabbedDocument document)
         {
-            foreach (Control control in content.Controls)
+            if (document != null)
             {
-                if (control is ScintillaMiniMap)
+                foreach (Control control in document.Controls)
                 {
-                    return control as ScintillaMiniMap;
+                    if (control is ScintillaMiniMap)
+                    {
+                        return control as ScintillaMiniMap;
+                    }
                 }
             }
             return null;
         }
 
-        private void ShowMiniMap(object sender, EventArgs e)
+        private void ToggleMiniMap(object sender, EventArgs e)
         {
-            this.settingObject.IsVisible = !this.settingObject.IsVisible;
-            ((ToolStripMenuItem)sender).Checked = this.settingObject.IsVisible;
+            _settings.IsVisible = !_settings.IsVisible;
+        }
+
+        void settingObject_OnSettingsChanged()
+        {
+            if (_settings.ShowToolbarButton != _toggleButton.Visible)
+            {
+                _toggleButton.Visible = _settings.ShowToolbarButton;
+                _toggleSeparator.Visible = _settings.ShowToolbarButton;
+            }
+
+            if (_settings.IsVisible != _toggleMenuItem.Checked)
+            {
+                _toggleMenuItem.Checked = _settings.IsVisible;
+                _toggleButton.Checked = _settings.IsVisible;
+            }
         }
 
         #endregion
@@ -168,9 +189,9 @@ namespace EditorMiniMap
         /// </summary>
         public void InitBasics()
         {
-            String dataPath = Path.Combine(PathHelper.DataDir, pluginName);
+            String dataPath = Path.Combine(PluginCore.Helpers.PathHelper.DataDir, NAME);
             if (!Directory.Exists(dataPath)) Directory.CreateDirectory(dataPath);
-            this.settingFilename = Path.Combine(dataPath, "Settings.fdb");
+            _settingsFilename = Path.Combine(dataPath, "Settings.fdb");
         }
 
         /// <summary>
@@ -180,27 +201,39 @@ namespace EditorMiniMap
         {
             // Set events you want to listen (combine as flags)
             EventManager.AddEventHandler(this, EventType.FileOpen | EventType.FileSwitch);
+            _settings.OnSettingsChanged += new SettingsChangesEvent(settingObject_OnSettingsChanged);
         }
 
         /// <summary>
         /// Adds shortcuts for manipulating the mini map
         /// </summary>
-        public void AddShortCuts()
+        public void CreateMenuItems()
         {
             ToolStripMenuItem menu = (ToolStripMenuItem)PluginBase.MainForm.FindMenuItem("ViewMenu");
-            ToolStripMenuItem menuItem;
 
-            menuItem = new ToolStripMenuItem("Show &MiniMap", null, new EventHandler(ShowMiniMap));
-            menuItem.Checked = this.settingObject.IsVisible;
-            PluginBase.MainForm.RegisterShortcutItem("EditorMiniMap.ShowMiniMap", menuItem);
+            _toggleMenuItem = new ToolStripMenuItem(ResourceHelper.GetString("EditorMiniMap.Label.ToggleMiniMap"), ResourceHelper.GetImage("MiniMap"), new EventHandler(ToggleMiniMap));
+            _toggleMenuItem.Checked = _settings.IsVisible;
+            PluginBase.MainForm.RegisterShortcutItem("EditorMiniMap.ShowMiniMap", _toggleMenuItem);
 
             int index = menu.DropDownItems.IndexOfKey("FullScreen") + 1;
             index = index > -1 ? index : 0;
 
             if (!(menu.DropDownItems[index] is ToolStripSeparator))
                 menu.DropDownItems.Insert(index, new ToolStripSeparator());
- 
-            menu.DropDownItems.Insert(index + 1, menuItem);
+
+            menu.DropDownItems.Insert(index + 1, _toggleMenuItem);
+
+            _toggleButton = new ToolStripButton(ResourceHelper.GetString("EditorMiniMap.Description.ToggleMiniMap"), ResourceHelper.GetImage("MiniMap"), new EventHandler(ToggleMiniMap));
+            _toggleButton.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            _toggleButton.ToolTipText = ResourceHelper.GetString("EditorMiniMap.Description.ToggleMiniMap");
+            _toggleButton.Checked = _settings.IsVisible;
+            _toggleButton.Visible = _settings.ShowToolbarButton;
+
+            _toggleSeparator = new ToolStripSeparator();
+            _toggleSeparator.Visible = _settings.ShowToolbarButton;
+
+            PluginBase.MainForm.ToolStrip.Items.Add(_toggleSeparator);
+            PluginBase.MainForm.ToolStrip.Items.Add(_toggleButton);
         }
 
         /// <summary>
@@ -208,12 +241,13 @@ namespace EditorMiniMap
         /// </summary>
         public void LoadSettings()
         {
-            this.settingObject = new Settings();
-            if (!File.Exists(this.settingFilename)) this.SaveSettings();
+            _settings = new Settings();
+            if (!File.Exists(_settingsFilename)) this.SaveSettings();
             else
             {
-                Object obj = ObjectSerializer.Deserialize(this.settingFilename, this.settingObject);
-                this.settingObject = (Settings)obj;
+                Object obj = ObjectSerializer.Deserialize(_settingsFilename, _settings);
+                _settings = (Settings)obj;
+                _settings.MaxLineLimit = _settings.MaxLineLimit;
             }
         }
 
@@ -222,10 +256,9 @@ namespace EditorMiniMap
         /// </summary>
         public void SaveSettings()
         {
-            ObjectSerializer.Serialize(this.settingFilename, this.settingObject);
+            ObjectSerializer.Serialize(_settingsFilename, _settings);
         }
 
 		#endregion
-
 	}
 }
