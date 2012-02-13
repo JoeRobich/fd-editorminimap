@@ -79,9 +79,9 @@ namespace EditorMiniMap
 
         protected override void Dispose(bool disposing)
         {
-            base.Dispose(disposing);
             _updateTimer.Stop();
             UnhookEvents();
+            base.Dispose(disposing);
         }
 
         #endregion
