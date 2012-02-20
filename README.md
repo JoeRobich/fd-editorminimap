@@ -8,10 +8,11 @@ Renders a miniature version of the open file in a bar to the side of the editor.
 [Version 0.9](http://goo.gl/csLeF)
 
 ## History
-**v0.9** - Added optional toolbar button for toggling the mini map. If you have problems with large files, I added a configurable line limit. Fixed some synchronization and stability issues.
+**v0.9** - Added optional toolbar button for toggling the mini map. If you have problems with large files, I added a configurable line limit. Fixed some synchronization and stability issues.  
 **v0.8** - Lots of changes to improve scrolling and perfromance.  
-**v0.1** - Initial creation  
+**v0.1** - Initial creation.  
 
 ## Thanks go to
 
 - The FlashDevelop team for making an awesome product and being very helpful in the forums (http://flashdevelop.org/)
+- Everyone who has submitted a bug report or suggestion
