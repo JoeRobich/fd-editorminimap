@@ -8,6 +8,7 @@ Renders a miniature version of the open file in a bar to the side of the editor.
 [Version 0.9.2](http://goo.gl/csLeF)
 
 ## History
+**v0.9.3** - Fixed issue when scrolling with collapsed code. Fixed issue when removing because of too many lines of code.  
 **v0.9.2** - Fixed issue with additional maps being added when a file was moved.  
 **v0.9.1** - Changed Dispose order to avoid update events after disposed.  
 **v0.9** - Added optional toolbar button for toggling the mini map. If you have problems with large files, I added a configurable line limit. Fixed some synchronization and stability issues.  

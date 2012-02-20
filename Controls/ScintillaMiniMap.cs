@@ -28,6 +28,7 @@ namespace EditorMiniMap
         
         // Ignore changes when updating
         private bool _updating = false;
+        private bool _disabled = false;
 
         // Track mouse clicks
         private bool _mouseDownInside = false;
@@ -67,14 +68,15 @@ namespace EditorMiniMap
             this.IsVScrollBar = false;
             // Hide the margin
             this.SetMarginWidthN(1, 0);
+            this.AllowDrop = true;
         }
 
-        private void Remove()
+        private void Disable()
         {
             // Unhook events then remove and dispose of ourselves
-            Dispose();
-            this.Parent.Controls.Remove(this);
-            this.Dispose();
+            Dispose(true);
+            _disabled = true;
+            //this.Parent.Controls.Remove(this);
         }
 
         protected override void Dispose(bool disposing)
@@ -147,6 +149,9 @@ namespace EditorMiniMap
 
         public void RefreshSettings()
         {
+            if (_disabled)
+                return;
+
             // Has the visibility changed?
             if (this.Visible != _settings.IsVisible)
             {
@@ -235,13 +240,13 @@ namespace EditorMiniMap
 
                 // if the mouse is clicking on us, is within the mini map bounds, 
                 // and the click started within the mini map
-                if (!_mouseDownOutside &&
+                if ((!_mouseDownOutside) &&
                     activeHwnd == this.Parent.Handle &&
                     this.ClientRectangle.Contains(clientPosition))
                 {
                     // get the cursor position under the mouse
                     int position = this.PositionFromPoint(clientPosition.X, clientPosition.Y);
-                    int centerLine = this.LineFromPosition(position);
+                    int centerLine = this.VisibleFromDocLine(this.LineFromPosition(position));
                     // if it does not match our last position
                     if (_lastCenterLine != centerLine)
                     {
@@ -295,9 +300,12 @@ namespace EditorMiniMap
 
         private void UpdateMiniMap(bool forceUpdate)
         {
+            if (_disabled)
+                return;
+
             // Check to see if we've gone over our line limit
             if (_partnerEditor.LineCount > _settings.MaxLineLimit)
-                Remove();
+                Disable();
 
             if (!this.Visible)
                 return;
@@ -350,8 +358,9 @@ namespace EditorMiniMap
                 this.MarkerDefine(20, ScintillaNet.Enums.MarkerSymbol.Background);
 
                 // Add the visible lines highlight
+                int firstDocumentLine = this.DocLineFromVisible(partnerFirstLine);
                 int lastVisibleLine = this.DocLineFromVisible(partnerFirstLine + partnerLinesOnScreen);
-                for (int line = partnerFirstLine; line < lastVisibleLine; line++)
+                for (int line = firstDocumentLine; line < lastVisibleLine; line++)
                 {
                     this.MarkerAdd(line, 20);
                 }
@@ -370,12 +379,13 @@ namespace EditorMiniMap
 
         private void ScrollMiniMap()
         {
+            int displayLineCount = this.VisibleFromDocLine(this.LineCount);
             // If there is more lines that can fit on the screen
-            if (this.LineCount > this.LinesOnScreen)
+            if (displayLineCount > this.LinesOnScreen)
             {
                 // Apply a continuous scroll, so that all lines will eventually be visible
-                double percent = _lastPartnerFirstLine / Convert.ToDouble(_partnerEditor.LineCount - _lastPartnerLinesOnScreen);
-                int line = (int)Math.Floor(percent * (this.LineCount - this.LinesOnScreen));
+                double percent = _lastPartnerFirstLine / Convert.ToDouble(displayLineCount - _lastPartnerLinesOnScreen);
+                int line = (int)Math.Floor(percent * (displayLineCount - this.LinesOnScreen));
                 int delta = line - this.FirstVisibleLine - 1;
                 this.LineScroll(0, delta);
             }
