@@ -5,9 +5,10 @@ Renders a miniature version of the open file in a bar to the side of the editor.
 ![Screenshot](http://dl.dropbox.com/u/3917850/images/editorminimap.png)
 
 ## Download
-[Version 0.9.4](http://goo.gl/csLeF)
+[Version 0.9.5](http://goo.gl/csLeF)
 
 ## History
+**v0.9.5** - Added support for split view which highlights both visible areas.
 **v0.9.4** - Now targets the .Net 2.0 Framework.  
 **v0.9.3** - Fixed issue when scrolling with collapsed code. Fixed issue when removing because of too many lines of code.  
 **v0.9.2** - Fixed issue with additional maps being added when a file was moved.  

@@ -25,6 +25,7 @@ namespace EditorMiniMap
         private const int DEFAULT_MAX_LINE_LIMIT = 5000;
 
         private Color highlightColor = Color.LightGray;
+        private Color splitHighlightColor = Color.LightPink;
         private int fontSize = DEFAULT_FONT_SIZE;
         private bool isVisible = DEFAULT_IS_VISIBLE;
         private int width = DEFAULT_WIDTH;
@@ -45,6 +46,23 @@ namespace EditorMiniMap
                 if (highlightColor != value)
                 {
                     highlightColor = value;
+                    FireChanged();
+                }
+            }
+        }
+
+        [LocalizedCategory("EditorMiniMap.Category.UI")]
+        [LocalizedDisplayName("EditorMiniMap.Label.SplitHighlightColor")]
+        [LocalizedDescription("EditorMiniMap.Description.SplitHighlightColor")]
+        [DefaultValue(typeof(Color), "LightPink")]
+        public Color SplitHighlightColor
+        {
+            get { return splitHighlightColor; }
+            set
+            {
+                if (splitHighlightColor != value)
+                {
+                    splitHighlightColor = value;
                     FireChanged();
                 }
             }

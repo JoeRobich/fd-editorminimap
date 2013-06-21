@@ -14,6 +14,7 @@ namespace EditorMiniMap
     public class ScintillaMiniMap : ScintillaControl
     {
         private ScintillaControl _partnerEditor = null;
+        private ScintillaControl _partnerSplitEditor = null;
         private Settings _settings = null;
         private Timer _updateTimer;
 
@@ -22,6 +23,10 @@ namespace EditorMiniMap
         private int _lastPartnerLinesOnScreen = -1;
         private int _lastCenterLine = -1;
         private int _lastLinesOnScreen = 0;
+
+        // Track the last visible lines
+        private int _lastSplitPartnerFirstLine = -1;
+        private int _lastSplitPartnerLinesOnScreen = -1;
 
         private Language _lastLanguage = null;
         
@@ -35,12 +40,13 @@ namespace EditorMiniMap
 
         #region Initializing and Disposing
 
-        public ScintillaMiniMap(ScintillaControl partnerEditor, Settings settings)
+        public ScintillaMiniMap(ScintillaControl partnerEditor, ScintillaControl partnerSplitEditor, Settings settings)
         {
             InitializeMiniMap();
 
             _settings = settings;
             _partnerEditor = partnerEditor;
+            _partnerSplitEditor = partnerSplitEditor;
 
             // Update timer for looking a mouse events on MiniMap and keeping the two control in sync
             _updateTimer = new Timer();
@@ -175,6 +181,17 @@ namespace EditorMiniMap
 
             if (this.Width != _settings.Width)
                 this.Width = _settings.Width;
+
+            // Define the highlight markers
+            this.MarkerSetBack(20, PluginCore.Utilities.DataConverter.ColorToInt32(_settings.HighlightColor));
+            this.MarkerDefine(20, ScintillaNet.Enums.MarkerSymbol.Background);
+
+            this.MarkerSetBack(21, PluginCore.Utilities.DataConverter.ColorToInt32(_settings.SplitHighlightColor));
+            this.MarkerDefine(21, ScintillaNet.Enums.MarkerSymbol.Background);
+
+            Color blendedHighlightColor = BlendColors(_settings.HighlightColor, _settings.SplitHighlightColor);
+            this.MarkerSetBack(22, PluginCore.Utilities.DataConverter.ColorToInt32(blendedHighlightColor));
+            this.MarkerDefine(22, ScintillaNet.Enums.MarkerSymbol.Background);
 
             // Force update of the mini map since the settings have changed
             UpdateMiniMap(true);
@@ -344,17 +361,17 @@ namespace EditorMiniMap
             int partnerFirstLine = _partnerEditor.FirstVisibleLine;
             int partnerLinesOnScreen = _partnerEditor.LinesOnScreen;
 
+            int splitPartnerFirstLine = _partnerSplitEditor.FirstVisibleLine;
+            int splitPartnerLinesOnScreen = _partnerSplitEditor.LinesOnScreen;
+
             // Check to see if we have scrolled or resized or...
             if (partnerFirstLine != _lastPartnerFirstLine ||
-                partnerLinesOnScreen != _lastPartnerLinesOnScreen || 
+                partnerLinesOnScreen != _lastPartnerLinesOnScreen ||
+                splitPartnerFirstLine != _lastSplitPartnerFirstLine ||
+                splitPartnerLinesOnScreen != _lastSplitPartnerLinesOnScreen ||
                 forceUpdate)
             {
-                // Remove old line highlight
-                this.MarkerDeleteAll(20);
-
-                // Define the highlight marker
-                this.MarkerSetBack(20, PluginCore.Utilities.DataConverter.ColorToInt32(_settings.HighlightColor));
-                this.MarkerDefine(20, ScintillaNet.Enums.MarkerSymbol.Background);
+                RemoveOldLineHighlights();
 
                 // Add the visible lines highlight
                 int firstDocumentLine = this.DocLineFromVisible(partnerFirstLine);
@@ -363,7 +380,22 @@ namespace EditorMiniMap
                 {
                     this.MarkerAdd(line, 20);
                 }
-                
+
+                if (_partnerSplitEditor.Visible)
+                {
+                    // Add the visible split highlight
+                    int firstSplitDocumentLine = this.DocLineFromVisible(splitPartnerFirstLine);
+                    int lastSplitVisibleLine = this.DocLineFromVisible(splitPartnerFirstLine + splitPartnerLinesOnScreen);
+                    for (int line = firstSplitDocumentLine; line < lastSplitVisibleLine; line++)
+                    {
+                        if (line < firstDocumentLine ||
+                            line > lastVisibleLine)
+                            this.MarkerAdd(line, 21);
+                        else
+                            this.MarkerAdd(line, 22);
+                    }
+                }
+
                 // When visible lines < line count, apply a continuous scroll so that all lines can be visible
                 ScrollMiniMap();
 
@@ -371,9 +403,28 @@ namespace EditorMiniMap
                 _lastPartnerFirstLine = partnerFirstLine;
                 _lastPartnerLinesOnScreen = partnerLinesOnScreen;
                 _lastCenterLine = _lastPartnerFirstLine + (int)Math.Floor(_lastPartnerLinesOnScreen / 2.0);
+
+                _lastSplitPartnerFirstLine = splitPartnerFirstLine;
+                _lastSplitPartnerLinesOnScreen = splitPartnerLinesOnScreen;
             }
 
+
             _updating = false;
+        }
+
+        private void RemoveOldLineHighlights()
+        {
+            this.MarkerDeleteAll(20);
+            this.MarkerDeleteAll(21);
+            this.MarkerDeleteAll(22);
+        }
+
+        private Color BlendColors(Color c1, Color c2)
+        {
+            return Color.FromArgb((c1.A + c2.A) / 2,
+                                (c1.R + c2.R) / 2,
+                                (c1.G + c2.G) / 2,
+                                (c1.B + c2.B) / 2);
         }
 
         private void ScrollMiniMap()

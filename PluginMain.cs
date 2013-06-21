@@ -125,11 +125,11 @@ namespace EditorMiniMap
                 if (sci == null)
                     return;
 
-                ScintillaMiniMap miniMap = GetMiniMap(PluginBase.MainForm.CurrentDocument);
+                ScintillaMiniMap miniMap = GetMiniMap(document);
                 if (miniMap != null)
                     return;
 
-                miniMap = new ScintillaMiniMap(sci, _settings);
+                miniMap = new ScintillaMiniMap(sci, document.SplitSci2, _settings);
                 document.Controls.Add(miniMap);
             }
             else if (e.Type == EventType.FileSwitch)
