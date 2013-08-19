@@ -129,8 +129,7 @@ namespace EditorMiniMap
                 if (miniMap != null)
                     return;
 
-                miniMap = new ScintillaMiniMap(sci, document.SplitSci2, _settings);
-                document.Controls.Add(miniMap);
+                document.Controls.Add(new MiniMapPanel(document, _settings));
             }
             else if (e.Type == EventType.FileSwitch)
             {

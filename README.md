@@ -2,13 +2,18 @@
 
 Renders a miniature version of the open file in a bar to the side of the editor. The current visible lines are highlighted so you know exactely where in your code you are. Click on the map to scroll quickly through your code. Configure the highlight color, map width, map placement, map font size and more.
 
-![Screenshot](http://dl.dropbox.com/u/3917850/images/editorminimap.png)
+![Screenshot](http://dl.dropbox.com/u/3917850/images/editorminimap.png)  
+
+New Code Preview popup on mouse hover.  
+
+![Code Preview](http://dl.dropbox.com/u/3917850/images/editorminimap-codepreview.png)  
 
 ## Download
-[Version 0.9.5](http://goo.gl/csLeF)
+[Version 1.0](http://goo.gl/csLeF)
 
 ## History
-**v0.9.5** - Added support for split view which highlights both visible areas.
+**v1.0** - Right mouse button now scrolls split editor. Code preview popup when hovering.  
+**v0.9.5** - Added support for split view which highlights both visible areas.  
 **v0.9.4** - Now targets the .Net 2.0 Framework.  
 **v0.9.3** - Fixed issue when scrolling with collapsed code. Fixed issue when removing because of too many lines of code.  
 **v0.9.2** - Fixed issue with additional maps being added when a file was moved.  

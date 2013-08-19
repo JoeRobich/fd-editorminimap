@@ -23,6 +23,7 @@ namespace EditorMiniMap
         private const bool DEFAULT_ONLY_UPDATE_ON_TIMER = false;
         private const bool DEFAULT_SHOW_TOOLBAR_BUTTON = false;
         private const int DEFAULT_MAX_LINE_LIMIT = 5000;
+        private const bool DEFAULT_SHOW_CODE_PREVIEW = true;
 
         private Color highlightColor = Color.LightGray;
         private Color splitHighlightColor = Color.LightPink;
@@ -33,6 +34,7 @@ namespace EditorMiniMap
         private bool onlyUpdateOnTimer = DEFAULT_ONLY_UPDATE_ON_TIMER;
         private bool showToolbarButton = DEFAULT_SHOW_TOOLBAR_BUTTON;
         private int _maxLineLimit = DEFAULT_MAX_LINE_LIMIT;
+        private bool showCodePreview = DEFAULT_SHOW_CODE_PREVIEW;
 
         [LocalizedCategory("EditorMiniMap.Category.UI")]
         [LocalizedDisplayName("EditorMiniMap.Label.HighlightColor")]
@@ -191,6 +193,23 @@ namespace EditorMiniMap
                 if (showToolbarButton != value)
                 {
                     showToolbarButton = value;
+                    FireChanged();
+                }
+            }
+        }
+
+        [LocalizedCategory("EditorMiniMap.Category.Visibility")]
+        [LocalizedDisplayName("EditorMiniMap.Label.ShowCodePreview")]
+        [LocalizedDescription("EditorMiniMap.Description.ShowCodePreview")]
+        [DefaultValue(DEFAULT_SHOW_CODE_PREVIEW)]
+        public bool ShowCodePreview
+        {
+            get { return showCodePreview; }
+            set
+            {
+                if (showCodePreview != value)
+                {
+                    showCodePreview = value;
                     FireChanged();
                 }
             }

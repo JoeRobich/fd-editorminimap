@@ -141,6 +141,9 @@
   <data name="EditorMiniMap.Description.Position" xml:space="preserve">
     <value>Whether the mini map should be on the left or right of the editor.</value>
   </data>
+  <data name="EditorMiniMap.Description.ShowCodePreview" xml:space="preserve">
+    <value>When hovering over the MiniMap a preview of the code is displayed.</value>
+  </data>
   <data name="EditorMiniMap.Description.ShowToolbarButton" xml:space="preserve">
     <value>Whether to show a mini map toggle button in the toolbar.</value>
   </data>
@@ -170,6 +173,9 @@
   </data>
   <data name="EditorMiniMap.Label.Position" xml:space="preserve">
     <value>Position</value>
+  </data>
+  <data name="EditorMiniMap.Label.ShowCodePreview" xml:space="preserve">
+    <value>Show code preview</value>
   </data>
   <data name="EditorMiniMap.Label.ShowToolbarButton" xml:space="preserve">
     <value>Show toolbar button</value>
