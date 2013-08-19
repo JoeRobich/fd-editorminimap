@@ -21,6 +21,7 @@ namespace EditorMiniMap
             this.Settings = settings;
 
             InitializeControl();
+            RefreshSettings();
             HookEvents();
         }
 
