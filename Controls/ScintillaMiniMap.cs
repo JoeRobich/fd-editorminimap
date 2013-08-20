@@ -38,6 +38,8 @@ namespace EditorMiniMap
         private bool _updating = false;
         private bool _disabled = false;
 
+        private bool _mouseDown = false;
+
         #region Initializing and Disposing
 
         public ScintillaMiniMap(ITabbedDocument document, Settings settings)
@@ -243,39 +245,54 @@ namespace EditorMiniMap
 
         #region Handle Mouse Click Methods
 
-        public void OnMouseDown(MouseEventArgs e)
+        public void OnMouseClick(MouseEventArgs e)
         {
             ScrollMiniMap(e);
+        }
+
+        public void OnMouseLeave()
+        {
+            CloseCodePopup();
+        }
+
+        public void OnMouseDown(MouseEventArgs e)
+        {
+            _mouseDown = true;
+            CloseCodePopup();
         }
 
         public void OnMouseMove(MouseEventArgs e)
         {
-            ScrollMiniMap(e);
+            if (_mouseDown)
+                ScrollMiniMap(e);
+
+            if (_codePopup != null)
+                UpdateCodePopup(e.Location);
         }
 
         public void OnMouseUp(MouseEventArgs e)
         {
-
+            _mouseDown = false;
         }
 
         public void OnMouseHover(Point mouse)
         {
-            CloseCodePopup();
-
-            var position = this.PositionFromPoint(mouse.X, mouse.Y);
-            var line = this.LineFromPosition(position);
+            if (_codePopup != null)
+                return;
 
             if (_settings.ShowCodePreview)
-                ShowCodePopup(mouse, line);
+                ShowCodePopup(mouse);
         }
 
         public void OnMouseHoverEnd()
         {
-            CloseCodePopup();
         }
 
-        private void ShowCodePopup(Point point, int line)
+        private void ShowCodePopup(Point point)
         {
+            var position = this.PositionFromPoint(point.X, point.Y);
+            var line = this.LineFromPosition(position);
+
             var controlPosition = this.PointToScreen(new Point(this.Left, this.Top));
             point = this.PointToScreen(point);
 
@@ -290,6 +307,16 @@ namespace EditorMiniMap
             _codePopup.Top = point.Y - (_codePopup.Height / 2);
             _codePopup.TopMost = true;
             _codePopup.Show(PluginCore.PluginBase.MainForm);
+        }
+
+        private void UpdateCodePopup(Point point)
+        {
+            var position = this.PositionFromPoint(point.X, point.Y);
+            var line = this.LineFromPosition(position);
+            _codePopup.CenterEditor(line);
+
+            point = this.PointToScreen(point);
+            _codePopup.Top = point.Y - (_codePopup.Height / 2);
         }
 
         private void CloseCodePopup()

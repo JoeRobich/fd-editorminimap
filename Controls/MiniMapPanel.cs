@@ -45,7 +45,12 @@ namespace EditorMiniMap
 
         protected override void OnMouseClick(MouseEventArgs e)
         {
+            this.MiniMap.OnMouseClick(e);
+        }
 
+        protected override void OnMouseLeave(EventArgs e)
+        {
+            this.MiniMap.OnMouseLeave();
         }
 
         protected override void OnMouseDown(MouseEventArgs e)
@@ -56,8 +61,7 @@ namespace EditorMiniMap
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
-            if (MouseButtonDown)
-                this.MiniMap.OnMouseMove(e);
+            this.MiniMap.OnMouseMove(e);
 
             if (!MouseHoverPosition.IsEmpty && !MouseHoverPosition.Equals(e.Location))
             {
@@ -94,7 +98,7 @@ namespace EditorMiniMap
             RefreshSettings();
         }
 
-        private void RefreshSettings()
+        public void RefreshSettings()
         {
             if (this.Visible != this.Settings.IsVisible)
                 this.Visible = this.Settings.IsVisible;
@@ -107,6 +111,8 @@ namespace EditorMiniMap
 
             if (this.Width != this.Settings.Width)
                 this.Width = this.Settings.Width;
+
+            this.MiniMap.RefreshSettings();
         }
     }
 }

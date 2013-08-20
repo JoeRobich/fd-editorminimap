@@ -9,9 +9,11 @@ New Code Preview popup on mouse hover.
 ![Code Preview](http://dl.dropbox.com/u/3917850/images/editorminimap-codepreview.png)  
 
 ## Download
-[Version 1.0](http://goo.gl/csLeF)
+[Version 1.1](http://goo.gl/csLeF)
 
 ## History
+**v1.1** - Code preview follows the mouse until click or leave. Fixed bugs reported by mrpinc.  
+**v1.0.1** - Fixed bug when clicking the MiniMap in a large file registers two clicks.  
 **v1.0** - Right mouse button now scrolls split editor. Code preview popup when hovering.  
 **v0.9.5** - Added support for split view which highlights both visible areas.  
 **v0.9.4** - Now targets the .Net 2.0 Framework.  

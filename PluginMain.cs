@@ -125,8 +125,8 @@ namespace EditorMiniMap
                 if (sci == null)
                     return;
 
-                ScintillaMiniMap miniMap = GetMiniMap(document);
-                if (miniMap != null)
+                MiniMapPanel miniMapPanel = GetMiniMapPanel(document);
+                if (miniMapPanel != null)
                     return;
 
                 document.Controls.Add(new MiniMapPanel(document, _settings));
@@ -136,11 +136,11 @@ namespace EditorMiniMap
                 // Scintilla control Visible property does not seem to respect getting set when
                 // the control is not visible. So when switching to a new document, we have to
                 // refresh the settings.
-                ScintillaMiniMap miniMap = GetMiniMap(PluginBase.MainForm.CurrentDocument);
-                if (miniMap == null)
+                MiniMapPanel miniMapPanel = GetMiniMapPanel(PluginBase.MainForm.CurrentDocument);
+                if (miniMapPanel == null)
                     return;
 
-                miniMap.RefreshSettings();
+                miniMapPanel.RefreshSettings();
             }
 		}
 		
@@ -148,15 +148,15 @@ namespace EditorMiniMap
 
         #region Plugin Methods
 
-        private ScintillaMiniMap GetMiniMap(ITabbedDocument document)
+        private MiniMapPanel GetMiniMapPanel(ITabbedDocument document)
         {
             if (document != null)
             {
                 foreach (Control control in document.Controls)
                 {
-                    if (control is ScintillaMiniMap)
+                    if (control is MiniMapPanel)
                     {
-                        return control as ScintillaMiniMap;
+                        return control as MiniMapPanel;
                     }
                 }
             }
