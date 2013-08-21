@@ -31,6 +31,8 @@ namespace EditorMiniMap
             this.Width = 200;
             this.Dock = DockStyle.Right;
 
+            this.AllowDrop = true;
+
             // Add the MiniMap
             this.MiniMap = new ScintillaMiniMap(this.Document, this.Settings);
             this.Controls.Add(MiniMap);
@@ -41,6 +43,12 @@ namespace EditorMiniMap
         private void HookEvents()
         {
             this.Settings.OnSettingsChanged += Settings_OnSettingsChanged;
+        }
+
+        protected override void OnDragOver(DragEventArgs e)
+        {
+            var mouse = this.PointToClient(Control.MousePosition);
+            this.MiniMap.OnDragOver(mouse);
         }
 
         protected override void OnMouseClick(MouseEventArgs e)

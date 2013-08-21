@@ -245,9 +245,15 @@ namespace EditorMiniMap
 
         #region Handle Mouse Click Methods
 
+        public void OnDragOver(Point mouse)
+        {
+            var buttons = _document.SciControl == _document.SplitSci1 ? MouseButtons.Left : MouseButtons.Right;
+            ScrollMiniMap(mouse, buttons);
+        }
+
         public void OnMouseClick(MouseEventArgs e)
         {
-            ScrollMiniMap(e);
+            ScrollMiniMap(e.Location, e.Button);
         }
 
         public void OnMouseLeave()
@@ -264,7 +270,7 @@ namespace EditorMiniMap
         public void OnMouseMove(MouseEventArgs e)
         {
             if (_mouseDown)
-                ScrollMiniMap(e);
+                ScrollMiniMap(e.Location, e.Button);
 
             if (_codePopup != null)
                 UpdateCodePopup(e.Location);
@@ -329,14 +335,14 @@ namespace EditorMiniMap
             }
         }
 
-        private void ScrollMiniMap(MouseEventArgs e)
+        private void ScrollMiniMap(Point mouse, MouseButtons buttons)
         {
             // get the cursor position under the mouse
-            int position = this.PositionFromPoint(e.X, e.Y);
+            int position = this.PositionFromPoint(mouse.X, mouse.Y);
             int line = this.LineFromPosition(position);
             int centerLine = this.VisibleFromDocLine(line);
 
-            if (e.Button == MouseButtons.Left)
+            if (buttons == MouseButtons.Left)
             {
                 // if it does not match our last position
                 if (_lastSci1CenterLine != centerLine)
@@ -345,7 +351,7 @@ namespace EditorMiniMap
                     CenterSci1Editor(centerLine);
                 }
             }
-            else if (e.Button == MouseButtons.Right)
+            else if (buttons == MouseButtons.Right)
             {
                 // if it does not match our last position
                 if (_lastSci2CenterLine != centerLine)
