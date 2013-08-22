@@ -39,6 +39,7 @@ namespace EditorMiniMap
         private bool _disabled = false;
 
         private bool _mouseDown = false;
+        private bool _mouseMoved = false;
 
         #region Initializing and Disposing
 
@@ -251,9 +252,15 @@ namespace EditorMiniMap
             ScrollMiniMap(mouse, buttons);
         }
 
+        public void OnMouseWheel(MouseEventArgs e)
+        {
+            this.LineScroll(0, e.Delta / -40);
+        }
+
         public void OnMouseClick(MouseEventArgs e)
         {
-            ScrollMiniMap(e.Location, e.Button);
+            if (!_mouseMoved)
+                ScrollMiniMap(e.Location, e.Button);
         }
 
         public void OnMouseLeave()
@@ -270,7 +277,10 @@ namespace EditorMiniMap
         public void OnMouseMove(MouseEventArgs e)
         {
             if (_mouseDown)
+            {
+                _mouseMoved = true;
                 ScrollMiniMap(e.Location, e.Button);
+            }
 
             if (_codePopup != null)
                 UpdateCodePopup(e.Location);

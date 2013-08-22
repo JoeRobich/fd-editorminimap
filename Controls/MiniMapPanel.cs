@@ -51,6 +51,11 @@ namespace EditorMiniMap
             this.MiniMap.OnDragOver(mouse);
         }
 
+        protected override void OnMouseWheel(MouseEventArgs e)
+        {
+            this.MiniMap.OnMouseWheel(e);
+        }
+
         protected override void OnMouseClick(MouseEventArgs e)
         {
             this.MiniMap.OnMouseClick(e);
