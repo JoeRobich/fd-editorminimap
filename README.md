@@ -9,10 +9,11 @@ New Code Preview popup on mouse hover.
 ![Code Preview](http://dl.dropbox.com/u/3917850/images/editorminimap-codepreview.png)  
 
 ## Download
-[Version 1.3](http://goo.gl/csLeF)
+[Version 1.3.1](http://goo.gl/csLeF)
 
 ## History
-**v1.3** - Mouse scroll wheel can now be used to scoll the MiniMap for long files.
+**v1.3.1** - Fixed issue with single click when not showing code preview (reported by mrpinc).
+**v1.3** - Mouse scroll wheel can now be used to scoll the MiniMap for long files.  
 **v1.2** - MiniMap scrolls when dragging text over it. When in split view the scrolls the editor the drag was started from.  
 **v1.1** - Code preview follows the mouse until click or leave. Fixed bugs reported by mrpinc.  
 **v1.0.1** - Fixed bug when clicking the MiniMap in a large file registers two clicks.  

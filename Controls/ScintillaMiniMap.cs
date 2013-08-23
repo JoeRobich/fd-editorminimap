@@ -271,6 +271,7 @@ namespace EditorMiniMap
         public void OnMouseDown(MouseEventArgs e)
         {
             _mouseDown = true;
+            _mouseMoved = false;
             CloseCodePopup();
         }
 
