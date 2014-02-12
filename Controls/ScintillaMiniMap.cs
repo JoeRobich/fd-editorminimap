@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using System.Drawing;
 using System.Diagnostics;
 using PluginCore.Controls;
+using EditorMiniMap.Helpers;
 
 namespace EditorMiniMap
 {
@@ -307,6 +308,9 @@ namespace EditorMiniMap
 
         private void ShowCodePopup(Point point)
         {
+			if (!WindowHelper.ApplicationIsActivated())
+				return;
+
             var position = this.PositionFromPoint(point.X, point.Y);
             var line = this.LineFromPosition(position);
 

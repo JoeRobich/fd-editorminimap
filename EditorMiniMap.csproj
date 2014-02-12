@@ -64,6 +64,7 @@
     <Compile Include="Controls\MiniMapPanel.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Helpers\WindowHelper.cs" />
     <Compile Include="Localization\Attributes.cs" />
     <Compile Include="PluginMain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
