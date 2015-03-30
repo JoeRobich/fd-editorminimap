@@ -9,7 +9,7 @@ New Code Preview popup on mouse hover.
 ![Code Preview](http://dl.dropbox.com/u/3917850/images/editorminimap-codepreview.png)  
 
 ## Download
-[Version 1.4](http://goo.gl/csLeF)
+[Releases](https://github.com/JoeRobich/fd-editorminimap/releases/) 
 
 ## History
 **v1.4** - Fixed bug with non-en_US locales. Better support for high DPI. Updated to work with FD5.  
