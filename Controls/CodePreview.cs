@@ -1,4 +1,5 @@
 ﻿using PluginCore;
+using PluginCore.Helpers;
 using ScintillaNet;
 using ScintillaNet.Configuration;
 using System;
@@ -27,8 +28,8 @@ namespace EditorMiniMap
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.StartPosition = FormStartPosition.Manual;
             this.ShowInTaskbar = false;
-            this.Width = 400;
-            this.Height = 150;
+            this.Width = ScaleHelper.Scale(400);
+            this.Height = ScaleHelper.Scale(150);
             this.Controls.Add(this.Editor);
         }
 

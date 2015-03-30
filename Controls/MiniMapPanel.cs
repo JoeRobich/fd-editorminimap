@@ -1,4 +1,5 @@
 ﻿using PluginCore;
+using PluginCore.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -28,7 +29,7 @@ namespace EditorMiniMap
         private void InitializeControl()
         {
             // These will get corrected in RefreshSettings
-            this.Width = 200;
+            this.Width = ScaleHelper.Scale(200);
             this.Dock = DockStyle.Right;
 
             this.AllowDrop = true;
@@ -123,7 +124,7 @@ namespace EditorMiniMap
                 this.Dock = DockStyle.Left;
 
             if (this.Width != this.Settings.Width)
-                this.Width = this.Settings.Width;
+                this.Width = ScaleHelper.Scale(this.Settings.Width);
 
             this.MiniMap.RefreshSettings();
         }
