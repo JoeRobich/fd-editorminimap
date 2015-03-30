@@ -11,6 +11,8 @@ namespace EditorMiniMap.Helpers
 {
     public class ResourceHelper
     {
+        private const LocaleVersion defaultLocale = LocaleVersion.en_US;
+
         private static ResourceManager resourceManager = null;
         private static LocaleVersion storedLocale = LocaleVersion.en_US;
         private static Dictionary<string, Image> _imageCache = new Dictionary<string, Image>();
@@ -25,15 +27,36 @@ namespace EditorMiniMap.Helpers
             if (resourceManager == null || localeSetting != storedLocale)
             {
                 storedLocale = localeSetting;
-                Assembly callingAssembly = Assembly.GetCallingAssembly();
-                string prefix = callingAssembly.GetName().Name;
-                string path = prefix + ".Resources." + storedLocale.ToString();
-                resourceManager = new ResourceManager(path, callingAssembly);
+
+                if (!TryGetResourceManager(storedLocale, key, out resourceManager))
+                    TryGetResourceManager(defaultLocale, key, out resourceManager);
             }
             result = resourceManager.GetString(key);
             if (result == null)
                 result = key;
             return result;
+        }
+
+        private static bool TryGetResourceManager(LocaleVersion locale, string testKey, out ResourceManager manager)
+        {
+            manager = null;
+
+            try
+            {
+                Assembly callingAssembly = Assembly.GetCallingAssembly();
+                string prefix = callingAssembly.GetName().Name;
+                string path = prefix + ".Resources." + locale.ToString();
+
+                var testManager = new ResourceManager(path, callingAssembly);
+                var testResult = testManager.GetString(testKey);
+                manager = testManager;
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public static Image GetImage(string name)
@@ -50,7 +73,7 @@ namespace EditorMiniMap.Helpers
             {
                 _imageCache.Add(resourceName, Image.FromStream(callingAssembly.GetManifestResourceStream(resourceName)));
             }
-            return _imageCache[resourceName];            
+            return _imageCache[resourceName];
         }
     }
 }
