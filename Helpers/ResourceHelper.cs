@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using PluginCore;
 using PluginCore.Localization;
-using PluginCore;
-using System.Resources;
-using System.Reflection;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Reflection;
+using System.Resources;
 
 namespace EditorMiniMap.Helpers
 {
