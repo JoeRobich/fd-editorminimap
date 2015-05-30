@@ -64,6 +64,8 @@ namespace EditorMiniMap
                 if (this.ZoomLevel != zoomLevel)
                     this.ZoomLevel = zoomLevel;
             } */
+
+            this.Editor.SetProperty("lexer.cpp.track.preprocessor", "0");
         }
 
         private void UpdateFoldedCode()
@@ -120,10 +122,21 @@ namespace EditorMiniMap
 
             // Constrain the first visible line to a reasonable number
             int firstVisibleLine = Math.Min(Math.Max(line - (int)Math.Floor(linesOnScreen / 2.0), 0), lineCount - linesOnScreen + 1);
-            
+
             // Calculate shift then scroll
             int delta = firstVisibleLine - firstLine - 1;
-            this.Editor.LineScroll(0, delta);
+            this.Editor.LineScroll(-5000, delta);
+
+            firstLine = this.Editor.FirstVisibleLine;
+
+            var column = int.MaxValue;
+            for (var offset = 0; offset < this.Editor.LinesOnScreen; offset++)
+            {
+                var lineIndentation = this.Editor.GetLineIndentation(firstLine + offset);
+                column = Math.Min(column, this.Editor.GetLineIndentation(firstLine + offset));
+            }
+
+            this.Editor.LineScroll(column - 2, 0);
         }
     }
 }
