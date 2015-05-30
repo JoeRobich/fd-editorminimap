@@ -9,11 +9,12 @@ using PluginCore;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using EditorMiniMap.Helpers;
+using System.Linq;
 
 namespace EditorMiniMap
 {
-	public class PluginMain : IPlugin
-	{
+    public class PluginMain : IPlugin
+    {
         private const int API_KEY = 1;
         private const String NAME = "EditorMiniMap";
         private const String GUID = "1F4B503B-E512-4a2d-B80D-15C87DD6D5FA";
@@ -25,7 +26,7 @@ namespace EditorMiniMap
         private Settings _settings = null;
         private ToolStripMenuItem _toggleMenuItem = null;
 
-	    #region Required Properties
+        #region Required Properties
 
         /// <summary>
         /// Api level of the plugin
@@ -39,41 +40,41 @@ namespace EditorMiniMap
         /// Name of the plugin
         /// </summary> 
         public String Name
-		{
-			get { return NAME; }
-		}
+        {
+            get { return NAME; }
+        }
 
         /// <summary>
         /// GUID of the plugin
         /// </summary>
         public String Guid
-		{
-			get { return GUID; }
-		}
+        {
+            get { return GUID; }
+        }
 
         /// <summary>
         /// Author of the plugin
         /// </summary> 
         public String Author
-		{
-			get { return AUTHOR; }
-		}
+        {
+            get { return AUTHOR; }
+        }
 
         /// <summary>
         /// Description of the plugin
         /// </summary> 
         public String Description
-		{
-			get { return DESCRIPTION; }
-		}
+        {
+            get { return DESCRIPTION; }
+        }
 
         /// <summary>
         /// Web address for help
         /// </summary>
         public String Help
-		{
-			get { return HELP; }
-		}
+        {
+            get { return HELP; }
+        }
 
         /// <summary>
         /// Object that contains the settings
@@ -84,81 +85,86 @@ namespace EditorMiniMap
             get { return this._settings; }
         }
 
-		#endregion
+        #endregion
 
         #region Required Methods
 
         /// <summary>
-		/// Initializes the plugin
-		/// </summary>
-		public void Initialize()
-		{
+        /// Initializes the plugin
+        /// </summary>
+        public void Initialize()
+        {
             this.InitBasics();
             this.LoadSettings();
             this.CreateMenuItems();
             this.AddEventHandlers();
         }
-		
-		/// <summary>
-		/// Disposes the plugin
-		/// </summary>
-		public void Dispose()
-		{
-            this.SaveSettings();
-		}
 
-		/// <summary>
-		/// Handles the incoming events
-		/// </summary>
-		public void HandleEvent(Object sender, NotifyEvent e, HandlingPriority prority)
-		{
+        /// <summary>
+        /// Disposes the plugin
+        /// </summary>
+        public void Dispose()
+        {
+            this.SaveSettings();
+        }
+
+        /// <summary>
+        /// Handles the incoming events
+        /// </summary>
+        public void HandleEvent(Object sender, NotifyEvent e, HandlingPriority prority)
+        {
             if (e.Type == EventType.FileOpen)
             {
-                ITabbedDocument document = PluginBase.MainForm.CurrentDocument;
-                if (document == null)
-                    return;
-                // If the main form does not contain a Scintilla control, 
-                // then there is no need to add a mini map.
-                ScintillaNet.ScintillaControl sci = document.SciControl;
-                if (sci == null)
-                    return;
-
-                MiniMapPanel miniMapPanel = GetMiniMapPanel(document);
-                if (miniMapPanel != null)
-                    return;
-
-                document.Controls.Add(new MiniMapPanel(document, _settings));
+                TryAddMiniMapPanel(PluginBase.MainForm.CurrentDocument);
             }
             else if (e.Type == EventType.FileSwitch)
             {
                 // Scintilla control Visible property does not seem to respect getting set when
                 // the control is not visible. So when switching to a new document, we have to
                 // refresh the settings.
-                MiniMapPanel miniMapPanel = GetMiniMapPanel(PluginBase.MainForm.CurrentDocument);
-                if (miniMapPanel == null)
-                    return;
-
-                miniMapPanel.RefreshSettings();
+                RefreshMiniMapPanel(PluginBase.MainForm.CurrentDocument);
             }
-		}
+        }
 
-		#endregion
+        #endregion
 
         #region Plugin Methods
 
-        private MiniMapPanel GetMiniMapPanel(ITabbedDocument document)
+        private MiniMapPanel TryAddMiniMapPanel(ITabbedDocument document)
         {
-            if (document != null)
-            {
-                foreach (Control control in document.Controls)
-                {
-                    if (control is MiniMapPanel)
-                    {
-                        return control as MiniMapPanel;
-                    }
-                }
-            }
-            return null;
+            if (document == null)
+                return null;
+
+            // If the main form does not contain a Scintilla control,
+            // then there is no need to add a mini map.
+            ScintillaNet.ScintillaControl sci = document.SciControl;
+            if (sci == null)
+                return null;
+
+            MiniMapPanel miniMapPanel = TryGetMiniMapPanel(document);
+            if (miniMapPanel != null)
+                return null;
+
+            var panel = new MiniMapPanel(document, _settings);
+            document.Controls.Add(panel);
+            return panel;
+        }
+
+        private void RefreshMiniMapPanel(ITabbedDocument document)
+        {
+            var miniMapPanel = TryGetMiniMapPanel(PluginBase.MainForm.CurrentDocument)
+                            ?? TryAddMiniMapPanel(PluginBase.MainForm.CurrentDocument);
+
+            if (miniMapPanel != null)
+                miniMapPanel.RefreshSettings();
+        }
+
+        private MiniMapPanel TryGetMiniMapPanel(ITabbedDocument document)
+        {
+            if (document == null)
+                return null;
+
+            return document.Controls.OfType<MiniMapPanel>().FirstOrDefault();
         }
 
         private void ToggleMiniMap(object sender, EventArgs e)

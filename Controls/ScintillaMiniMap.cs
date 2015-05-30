@@ -34,7 +34,7 @@ namespace EditorMiniMap
 
         private Language _lastLanguage = null;
         private Timer _updateTimer = null;
-        
+
         // Ignore changes when updating
         private bool _updating = false;
         private bool _disabled = false;
