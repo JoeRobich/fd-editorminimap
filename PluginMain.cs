@@ -23,9 +23,7 @@ namespace EditorMiniMap
 
         private String _settingsFilename = "";
         private Settings _settings = null;
-        private ToolStripSeparator _toggleSeparator = null;
         private ToolStripMenuItem _toggleMenuItem = null;
-        private ToolStripButton _toggleButton = null;
 
 	    #region Required Properties
 
@@ -71,7 +69,7 @@ namespace EditorMiniMap
 
         /// <summary>
         /// Web address for help
-        /// </summary> 
+        /// </summary>
         public String Help
 		{
 			get { return HELP; }
@@ -85,7 +83,7 @@ namespace EditorMiniMap
         {
             get { return this._settings; }
         }
-		
+
 		#endregion
 
         #region Required Methods
@@ -108,7 +106,7 @@ namespace EditorMiniMap
 		{
             this.SaveSettings();
 		}
-		
+
 		/// <summary>
 		/// Handles the incoming events
 		/// </summary>
@@ -143,7 +141,7 @@ namespace EditorMiniMap
                 miniMapPanel.RefreshSettings();
             }
 		}
-		
+
 		#endregion
 
         #region Plugin Methods
@@ -170,17 +168,8 @@ namespace EditorMiniMap
 
         void settingObject_OnSettingsChanged()
         {
-            if (_settings.ShowToolbarButton != _toggleButton.Visible)
-            {
-                _toggleButton.Visible = _settings.ShowToolbarButton;
-                _toggleSeparator.Visible = _settings.ShowToolbarButton;
-            }
-
             if (_settings.IsVisible != _toggleMenuItem.Checked)
-            {
                 _toggleMenuItem.Checked = _settings.IsVisible;
-                _toggleButton.Checked = _settings.IsVisible;
-            }
         }
 
         #endregion
@@ -199,7 +188,7 @@ namespace EditorMiniMap
 
         /// <summary>
         /// Adds the required event handlers
-        /// </summary> 
+        /// </summary>
         public void AddEventHandlers()
         {
             // Set events you want to listen (combine as flags)
@@ -225,18 +214,6 @@ namespace EditorMiniMap
                 menu.DropDownItems.Insert(index, new ToolStripSeparator());
 
             menu.DropDownItems.Insert(index + 1, _toggleMenuItem);
-
-            _toggleButton = new ToolStripButton(ResourceHelper.GetString("EditorMiniMap.Description.ToggleMiniMap"), ResourceHelper.GetImage("MiniMap"), new EventHandler(ToggleMiniMap));
-            _toggleButton.DisplayStyle = ToolStripItemDisplayStyle.Image;
-            _toggleButton.ToolTipText = ResourceHelper.GetString("EditorMiniMap.Description.ToggleMiniMap");
-            _toggleButton.Checked = _settings.IsVisible;
-            _toggleButton.Visible = _settings.ShowToolbarButton;
-
-            _toggleSeparator = new ToolStripSeparator();
-            _toggleSeparator.Visible = _settings.ShowToolbarButton;
-
-            PluginBase.MainForm.ToolStrip.Items.Add(_toggleSeparator);
-            PluginBase.MainForm.ToolStrip.Items.Add(_toggleButton);
         }
 
         /// <summary>

@@ -144,9 +144,6 @@
   <data name="EditorMiniMap.Description.ShowCodePreview" xml:space="preserve">
     <value>When hovering over the MiniMap a preview of the code is displayed.</value>
   </data>
-  <data name="EditorMiniMap.Description.ShowToolbarButton" xml:space="preserve">
-    <value>Whether to show a mini map toggle button in the toolbar.</value>
-  </data>
   <data name="EditorMiniMap.Description.SplitHighlightColor" xml:space="preserve">
     <value>The background color to highlight the visible lines from the split editor.</value>
   </data>
@@ -176,9 +173,6 @@
   </data>
   <data name="EditorMiniMap.Label.ShowCodePreview" xml:space="preserve">
     <value>Show code preview</value>
-  </data>
-  <data name="EditorMiniMap.Label.ShowToolbarButton" xml:space="preserve">
-    <value>Show toolbar button</value>
   </data>
   <data name="EditorMiniMap.Label.SplitHighlightColor" xml:space="preserve">
     <value>Split Highlight color</value>

@@ -21,7 +21,6 @@ namespace EditorMiniMap
         private const int DEFAULT_WIDTH = 200;
         private const MiniMapPosition DEFAULT_POSITION = MiniMapPosition.Right;
         private const bool DEFAULT_ONLY_UPDATE_ON_TIMER = false;
-        private const bool DEFAULT_SHOW_TOOLBAR_BUTTON = false;
         private const int DEFAULT_MAX_LINE_LIMIT = 5000;
         private const bool DEFAULT_SHOW_CODE_PREVIEW = true;
 
@@ -32,7 +31,6 @@ namespace EditorMiniMap
         private int width = DEFAULT_WIDTH;
         private MiniMapPosition position = DEFAULT_POSITION;
         private bool onlyUpdateOnTimer = DEFAULT_ONLY_UPDATE_ON_TIMER;
-        private bool showToolbarButton = DEFAULT_SHOW_TOOLBAR_BUTTON;
         private int _maxLineLimit = DEFAULT_MAX_LINE_LIMIT;
         private bool showCodePreview = DEFAULT_SHOW_CODE_PREVIEW;
 
@@ -176,23 +174,6 @@ namespace EditorMiniMap
                 if (isVisible != value)
                 {
                     isVisible = value;
-                    FireChanged();
-                }
-            }
-        }
-
-        [LocalizedCategory("EditorMiniMap.Category.Visibility")]
-        [LocalizedDisplayName("EditorMiniMap.Label.ShowToolbarButton")]
-        [LocalizedDescription("EditorMiniMap.Description.ShowToolbarButton")]
-        [DefaultValue(DEFAULT_SHOW_TOOLBAR_BUTTON)]
-        public bool ShowToolbarButton
-        {
-            get { return showToolbarButton; }
-            set
-            {
-                if (showToolbarButton != value)
-                {
-                    showToolbarButton = value;
                     FireChanged();
                 }
             }
