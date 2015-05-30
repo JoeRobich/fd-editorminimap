@@ -138,8 +138,8 @@ namespace EditorMiniMap
 
                 column = Math.Min(column, lineIndentation);
             }
-
-            this.Editor.LineScroll(column - 2, 0);
+            var indentation = column / Editor.TabWidth;
+            this.Editor.LineScroll(column - indentation, 0);
         }
 
         static bool IsNullOrWhiteSpace(string value)
