@@ -12,6 +12,7 @@ New Code Preview popup on mouse hover.
 [Releases](https://github.com/JoeRobich/fd-editorminimap/releases/) 
 
 ## History
+**v1.5** - Disable Preprocessor lexing, resolves #1. Automatically scroll code preview based on indentation.  
 **v1.4** - Fixed bug with non-en_US locales. Better support for high DPI. Updated to work with FD5.  
 **v1.3.1** - Fixed issue with single click when not showing code preview (reported by mrpinc).
 **v1.3** - Mouse scroll wheel can now be used to scoll the MiniMap for long files.  
