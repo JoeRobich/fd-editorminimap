@@ -464,6 +464,8 @@ namespace EditorMiniMap
                     if (this.ZoomLevel != zoomLevel)
                         this.ZoomLevel = zoomLevel;
                 }
+
+                this.SetProperty("lexer.cpp.track.preprocessor", "0");
             }
 
             int sci1FirstLine = _splitSci1.FirstVisibleLine;
