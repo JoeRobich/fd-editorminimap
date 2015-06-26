@@ -11,12 +11,12 @@ namespace EditorMiniMap
 {
     public class CodePreview : Form
     {
-        private ITabbedDocument Document { get; set; }
+        private ScintillaControl Sci { get; set; }
         private ScintillaControl Editor { get; set; }
 
-        public CodePreview(ITabbedDocument document)
+        public CodePreview(ScintillaControl sci)
         {
-            this.Document = document;
+            this.Sci = sci;
             this.Editor = new ScintillaControl();
 
             InitializeControls();
@@ -28,17 +28,18 @@ namespace EditorMiniMap
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.StartPosition = FormStartPosition.Manual;
             this.ShowInTaskbar = false;
-            this.Width = ScaleHelper.Scale(400);
+            this.Width = ScaleHelper.Scale(504);
             this.Height = ScaleHelper.Scale(150);
             this.Controls.Add(this.Editor);
         }
 
         private void SetupEditor()
         {
-            this.Editor.Top = 4;
-            this.Editor.Left = 4;
-            this.Editor.Height = this.Height - 8;
-            this.Editor.Width = this.Width - 8;
+            var padding = ScaleHelper.Scale(2);
+            this.Editor.Top = padding;
+            this.Editor.Left = padding;
+            this.Editor.Height = this.Height - (padding * 2);
+            this.Editor.Width = this.Width - (padding * 2);
 
             // Make non-editable
             this.Editor.Enabled = false;
@@ -48,11 +49,11 @@ namespace EditorMiniMap
 
             this.Editor.SetMarginWidthN(1, 0);
 
-            this.Editor.Text = Document.SplitSci1.Text;
-            this.Editor.TabWidth = Document.SplitSci1.TabWidth;
+            this.Editor.Text = Sci.Text;
+            this.Editor.TabWidth = Sci.TabWidth;
 
             // If language has changed then, update syntax language and zoom level
-            this.Editor.ConfigurationLanguage = Document.SplitSci1.ConfigurationLanguage;
+            this.Editor.ConfigurationLanguage = Sci.ConfigurationLanguage;
             /* Language language = GetLanguage(Document.SplitSci1.ConfigurationLanguage);
 
             // Get the default style font size
@@ -71,9 +72,9 @@ namespace EditorMiniMap
         private void UpdateFoldedCode()
         {
             // Go line by line updating line visibility. Would prefer a CodeFoldsChanged event.
-            for (int index = 0; index < Document.SplitSci1.LineCount; index++)
+            for (int index = 0; index < Sci.LineCount; index++)
             {
-                bool visible = GetLineVisible(Document.SplitSci1, index);
+                bool visible = GetLineVisible(Sci, index);
                 bool editorVisible = GetLineVisible(this.Editor, index);
 
                 // if visibility doesn't match the update

@@ -10,6 +10,7 @@ using System.Drawing;
 using System.Runtime.InteropServices;
 using EditorMiniMap.Helpers;
 using System.Linq;
+using ScintillaNet;
 
 namespace EditorMiniMap
 {
@@ -115,14 +116,14 @@ namespace EditorMiniMap
         {
             if (e.Type == EventType.FileOpen)
             {
-                TryAddMiniMapPanel(PluginBase.MainForm.CurrentDocument);
+                TryAddMiniMapPanels(PluginBase.MainForm.CurrentDocument);
             }
             else if (e.Type == EventType.FileSwitch)
             {
                 // Scintilla control Visible property does not seem to respect getting set when
                 // the control is not visible. So when switching to a new document, we have to
                 // refresh the settings.
-                RefreshMiniMapPanel(PluginBase.MainForm.CurrentDocument);
+                RefreshMiniMapPanels(PluginBase.MainForm.CurrentDocument);
             }
         }
 
@@ -130,41 +131,68 @@ namespace EditorMiniMap
 
         #region Plugin Methods
 
-        private MiniMapPanel TryAddMiniMapPanel(ITabbedDocument document)
+        private void TryAddMiniMapPanels(ITabbedDocument document)
         {
             if (document == null)
+                return;
+
+            TryAddMiniMapPanel(document, document.SplitSci1);
+            TryAddMiniMapPanel(document, document.SplitSci2);
+        }
+
+        private MiniMapPanel TryAddMiniMapPanel(ITabbedDocument document, ScintillaControl sci)
+        {
+            if (document == null || sci == null)
                 return null;
 
-            // If the main form does not contain a Scintilla control,
-            // then there is no need to add a mini map.
-            ScintillaNet.ScintillaControl sci = document.SciControl;
-            if (sci == null)
-                return null;
-
-            MiniMapPanel miniMapPanel = TryGetMiniMapPanel(document);
+            MiniMapPanel miniMapPanel = TryGetMiniMapPanel(document, sci);
             if (miniMapPanel != null)
                 return null;
 
-            var panel = new MiniMapPanel(document, _settings);
-            document.Controls.Add(panel);
+            var panel = new MiniMapPanel(document, sci, _settings);
+
+            var splitter = document.Controls.OfType<SplitContainer>().FirstOrDefault();
+            if (splitter == null)
+                return null;
+
+            if (document.SplitSci1 == sci)
+                splitter.Panel1.Controls.Add(panel);
+            else if (document.SplitSci2 == sci)
+                splitter.Panel2.Controls.Add(panel);
+
             return panel;
         }
 
-        private void RefreshMiniMapPanel(ITabbedDocument document)
+        private void RefreshMiniMapPanels(ITabbedDocument document)
         {
-            var miniMapPanel = TryGetMiniMapPanel(PluginBase.MainForm.CurrentDocument)
-                            ?? TryAddMiniMapPanel(PluginBase.MainForm.CurrentDocument);
+            RefreshMiniMapPanel(document, document.SplitSci1);
+            RefreshMiniMapPanel(document, document.SplitSci2);
+        }
+
+        private void RefreshMiniMapPanel(ITabbedDocument document, ScintillaControl sci)
+        {
+            var miniMapPanel = TryGetMiniMapPanel(document, sci)
+                            ?? TryAddMiniMapPanel(document, sci);
 
             if (miniMapPanel != null)
                 miniMapPanel.RefreshSettings();
         }
 
-        private MiniMapPanel TryGetMiniMapPanel(ITabbedDocument document)
+        private MiniMapPanel TryGetMiniMapPanel(ITabbedDocument document, ScintillaControl sci)
         {
-            if (document == null)
+            if (document == null || sci == null)
                 return null;
 
-            return document.Controls.OfType<MiniMapPanel>().FirstOrDefault();
+            var splitter = document.Controls.OfType<SplitContainer>().FirstOrDefault();
+            if (splitter == null)
+                return null;
+
+            if (document.SplitSci1 == sci)
+                return splitter.Panel1.Controls.OfType<MiniMapPanel>().FirstOrDefault();
+            else if (document.SplitSci2 == sci)
+                return splitter.Panel2.Controls.OfType<MiniMapPanel>().FirstOrDefault();
+
+            return null;
         }
 
         private void ToggleMiniMap(object sender, EventArgs e)

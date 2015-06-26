@@ -1,9 +1,8 @@
 ﻿using PluginCore;
 using PluginCore.Helpers;
+using ScintillaNet;
 using System;
-using System.Collections.Generic;
 using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 
 namespace EditorMiniMap
@@ -12,13 +11,15 @@ namespace EditorMiniMap
     {
         public ScintillaMiniMap MiniMap { get; private set; }
         private ITabbedDocument Document { get; set; }
+        private ScintillaControl ScintillaControl { get; set; }
         private Settings Settings { get; set; }
         private bool MouseButtonDown { get; set; }
         private Point MouseHoverPosition { get; set; }
 
-        public MiniMapPanel(ITabbedDocument document, Settings settings)
+        public MiniMapPanel(ITabbedDocument document, ScintillaControl sci, Settings settings)
         {
             this.Document = document;
+            this.ScintillaControl = sci;
             this.Settings = settings;
 
             InitializeControl();
@@ -31,11 +32,14 @@ namespace EditorMiniMap
             // These will get corrected in RefreshSettings
             this.Width = ScaleHelper.Scale(200);
             this.Dock = DockStyle.Right;
+            var padding = ScaleHelper.Scale(2);
+            this.Padding = new Padding(padding, 0, padding, 0);
 
             this.AllowDrop = true;
 
             // Add the MiniMap
-            this.MiniMap = new ScintillaMiniMap(this.Document, this.Settings);
+            this.MiniMap = new ScintillaMiniMap(this.ScintillaControl, this.Settings);
+            this.MiniMap.Margin = new Padding(0);
             this.Controls.Add(MiniMap);
 
             this.ContextMenu = new ContextMenu();
@@ -44,6 +48,9 @@ namespace EditorMiniMap
         private void HookEvents()
         {
             this.Settings.OnSettingsChanged += Settings_OnSettingsChanged;
+
+            if (Document.SplitSci2 == ScintillaControl)
+                Document.SplitContainer.Panel2.VisibleChanged += Document_SplitViewVisible;
         }
 
         protected override void OnDragOver(DragEventArgs e)
@@ -88,6 +95,7 @@ namespace EditorMiniMap
         protected override void OnMouseUp(MouseEventArgs e)
         {
             MouseButtonDown = false;
+            this.MiniMap.OnMouseUp(e);
         }
 
         protected override void OnMouseHover(EventArgs e)
@@ -105,6 +113,11 @@ namespace EditorMiniMap
         private void UnhookEvents()
         {
             this.Settings.OnSettingsChanged -= Settings_OnSettingsChanged;
+        }
+
+        private void Document_SplitViewVisible(object sender, EventArgs args)
+        {
+            RefreshSettings();
         }
 
         private void Settings_OnSettingsChanged()
@@ -125,6 +138,8 @@ namespace EditorMiniMap
 
             if (this.Width != this.Settings.Width)
                 this.Width = ScaleHelper.Scale(this.Settings.Width);
+
+            this.BackColor = this.Settings.HighlightColor;
 
             this.MiniMap.RefreshSettings();
         }

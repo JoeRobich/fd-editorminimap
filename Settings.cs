@@ -18,11 +18,12 @@ namespace EditorMiniMap
 
         private const int DEFAULT_FONT_SIZE = 2;
         private const bool DEFAULT_IS_VISIBLE = true;
-        private const int DEFAULT_WIDTH = 200;
+        private const int DEFAULT_WIDTH = 125;
         private const MiniMapPosition DEFAULT_POSITION = MiniMapPosition.Right;
         private const bool DEFAULT_ONLY_UPDATE_ON_TIMER = false;
         private const int DEFAULT_MAX_LINE_LIMIT = 5000;
         private const bool DEFAULT_SHOW_CODE_PREVIEW = true;
+        private const bool DEFAULT_SHOW_VERTICAL_SCROLLBAR = false;
 
         private Color highlightColor = Color.LightGray;
         private Color splitHighlightColor = Color.LightPink;
@@ -33,6 +34,7 @@ namespace EditorMiniMap
         private bool onlyUpdateOnTimer = DEFAULT_ONLY_UPDATE_ON_TIMER;
         private int _maxLineLimit = DEFAULT_MAX_LINE_LIMIT;
         private bool showCodePreview = DEFAULT_SHOW_CODE_PREVIEW;
+        private bool showVerticalScrollbar = DEFAULT_SHOW_VERTICAL_SCROLLBAR;
 
         [LocalizedCategory("EditorMiniMap.Category.UI")]
         [LocalizedDisplayName("EditorMiniMap.Label.HighlightColor")]
@@ -191,6 +193,24 @@ namespace EditorMiniMap
                 if (showCodePreview != value)
                 {
                     showCodePreview = value;
+                    FireChanged();
+                }
+            }
+        }
+
+
+        [LocalizedCategory("EditorMiniMap.Category.Visibility")]
+        [LocalizedDisplayName("EditorMiniMap.Label.ShowVerticalScrollbar")]
+        [LocalizedDescription("EditorMiniMap.Description.ShowVerticalScrollbar")]
+        [DefaultValue(DEFAULT_SHOW_VERTICAL_SCROLLBAR)]
+        public bool ShowVerticalScrollbar
+        {
+            get { return showVerticalScrollbar; }
+            set
+            {
+                if (showVerticalScrollbar != value)
+                {
+                    showVerticalScrollbar = value;
                     FireChanged();
                 }
             }

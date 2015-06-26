@@ -12,6 +12,7 @@ New Code Preview popup on mouse hover.
 [Releases](https://github.com/JoeRobich/fd-editorminimap/releases/) 
 
 ## History
+**v1.6** - Fixed scrolling when file is longer than will render in the minimap. Changed how MiniMap works with the split editor. Changed highlighting of visible screen rows to match VS.  
 **v1.5.1** - Fixed Auto-scroll by ignoring empty lines. Removed ToolStripButton for toggling MiniMap.  
 **v1.5** - Disable Preprocessor lexing, resolves #1. Automatically scroll code preview based on indentation.  
 **v1.4** - Fixed bug with non-en_US locales. Better support for high DPI. Updated to work with FD5.  

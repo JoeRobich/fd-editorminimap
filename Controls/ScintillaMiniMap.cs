@@ -1,35 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using EditorMiniMap.Helpers;
+using PluginCore;
 using ScintillaNet;
 using ScintillaNet.Configuration;
-using PluginCore;
-using ASCompletion.Context;
-using ASCompletion.Model;
-using System.Windows.Forms;
+using System;
 using System.Drawing;
-using System.Diagnostics;
-using PluginCore.Controls;
-using EditorMiniMap.Helpers;
+using System.Linq;
+using System.Windows.Forms;
 
 namespace EditorMiniMap
 {
     public class ScintillaMiniMap : ScintillaControl
     {
-        private ITabbedDocument _document = null;
-        private ScintillaControl _splitSci1 = null;
-        private ScintillaControl _splitSci2 = null;
+        private ScintillaControl _sci = null;
         private Settings _settings = null;
         private CodePreview _codePopup = null;
 
         // Track the last visible lines
-        private int _lastSci1FirstLine = -1;
-        private int _lastSci1LinesOnScreen = -1;
-        private int _lastSci1CenterLine = -1;
-        private int _lastSci2FirstLine = -1;
-        private int _lastSci2LinesOnScreen = -1;
-        private int _lastSci2CenterLine = -1;
-        private bool _lastSci2Visible = false;
+        private int _lastSciFirstLine = -1;
+        private int _lastSciLinesOnScreen = -1;
+        private int _lastSciCenterLine = -1;
         private int _lastLinesOnScreen = 0;
 
         private Language _lastLanguage = null;
@@ -44,14 +33,12 @@ namespace EditorMiniMap
 
         #region Initializing and Disposing
 
-        public ScintillaMiniMap(ITabbedDocument document, Settings settings)
+        public ScintillaMiniMap(ScintillaControl sci, Settings settings)
         {
             InitializeMiniMap();
 
             _settings = settings;
-            _document = document;
-            _splitSci1 = document.SplitSci1;
-            _splitSci2 = document.SplitSci2;
+            _sci = sci;
 
             // Visibilty no matching will force an update in RefreshSettings
             this.Visible = !_settings.IsVisible;
@@ -72,6 +59,7 @@ namespace EditorMiniMap
             this.IsHScrollBar = false;
             this.IsVScrollBar = false;
             // Hide the margin
+            this.SetMarginWidthN(0, 0);
             this.SetMarginWidthN(1, 0);
             this.AllowDrop = true;
             // Setup timer
@@ -102,9 +90,8 @@ namespace EditorMiniMap
         private void HookEvents()
         {
             _settings.OnSettingsChanged += new SettingsChangesEvent(_settings_OnSettingsChanged);
-            _splitSci1.TextInserted += new TextInsertedHandler(_splitSci1_TextInserted);
-            _splitSci1.TextDeleted += new TextDeletedHandler(_splitSci1_TextDeleted);
-            _document.SplitContainer.Panel2.VisibleChanged += Sci2Panel_VisibleChanged;
+            _sci.TextInserted += new TextInsertedHandler(_splitSci1_TextInserted);
+            _sci.TextDeleted += new TextDeletedHandler(_splitSci1_TextDeleted);
             _updateTimer.Tick += _timer_Update;
 
             HookUIEvents();
@@ -113,10 +100,7 @@ namespace EditorMiniMap
         private void HookUIEvents()
         {
             if (!_settings.OnlyUpdateOnTimer)
-            {
-                _splitSci1.UpdateUI += new UpdateUIHandler(_splitSci1_UpdateUI);
-                _splitSci2.UpdateUI += new UpdateUIHandler(_splitSci1_UpdateUI);
-            }
+                _sci.UpdateUI += new UpdateUIHandler(_splitSci1_UpdateUI);
         }
 
         void _timer_Update(object sender, EventArgs e)
@@ -127,11 +111,9 @@ namespace EditorMiniMap
         private void UnhookEvents()
         {
             _settings.OnSettingsChanged -= new SettingsChangesEvent(_settings_OnSettingsChanged);
-            _splitSci1.TextInserted -= new TextInsertedHandler(_splitSci1_TextInserted);
-            _splitSci1.TextDeleted -= new TextDeletedHandler(_splitSci1_TextDeleted);
-            _splitSci1.UpdateUI -= new UpdateUIHandler(_splitSci1_UpdateUI);
-            _splitSci2.UpdateUI -= new UpdateUIHandler(_splitSci1_UpdateUI);
-            _document.SplitContainer.Panel2.VisibleChanged -= Sci2Panel_VisibleChanged;
+            _sci.TextInserted -= new TextInsertedHandler(_splitSci1_TextInserted);
+            _sci.TextDeleted -= new TextDeletedHandler(_splitSci1_TextDeleted);
+            _sci.UpdateUI -= new UpdateUIHandler(_splitSci1_UpdateUI);
         }
 
         void _settings_OnSettingsChanged()
@@ -154,14 +136,6 @@ namespace EditorMiniMap
         void _splitSci1_TextDeleted(ScintillaControl sender, int position, int length, int linesAdded)
         {
             UpdateText();
-        }
-
-        void Sci2Panel_VisibleChanged(object sender, EventArgs e)
-        {
-            var timer = new Timer();
-            timer.Interval = 10;
-            timer.Tick += timer_Tick;
-            timer.Start();
         }
 
         void timer_Tick(object sender, EventArgs e)
@@ -189,23 +163,29 @@ namespace EditorMiniMap
 
                 // If we are newly visible the update folded code in the mini map
                 if (this.Visible)
+                {
+                    _sci.IsVScrollBar = _settings.ShowVerticalScrollbar;
                     UpdateFoldedCode();
+                }
+                else
+                {
+                    _sci.IsVScrollBar = true;
+                }
             }
 
-            _splitSci1.UpdateUI -= new UpdateUIHandler(_splitSci1_UpdateUI);
-            _splitSci2.UpdateUI -= new UpdateUIHandler(_splitSci1_UpdateUI);
+            if (_sci.IsVScrollBar != _settings.ShowVerticalScrollbar)
+            {
+                _sci.IsVScrollBar = _settings.ShowVerticalScrollbar;
+            }
+
+            _sci.UpdateUI -= new UpdateUIHandler(_splitSci1_UpdateUI);
             HookUIEvents();
 
             // Define the highlight markers
             this.MarkerSetBack(20, PluginCore.Utilities.DataConverter.ColorToInt32(_settings.HighlightColor));
             this.MarkerDefine(20, ScintillaNet.Enums.MarkerSymbol.Background);
 
-            this.MarkerSetBack(21, PluginCore.Utilities.DataConverter.ColorToInt32(_settings.SplitHighlightColor));
-            this.MarkerDefine(21, ScintillaNet.Enums.MarkerSymbol.Background);
-
-            Color blendedHighlightColor = BlendColors(_settings.HighlightColor, _settings.SplitHighlightColor);
-            this.MarkerSetBack(22, PluginCore.Utilities.DataConverter.ColorToInt32(blendedHighlightColor));
-            this.MarkerDefine(22, ScintillaNet.Enums.MarkerSymbol.Background);
+            BackColor = _settings.HighlightColor;
 
             // Force update of the mini map since the settings have changed
             UpdateMiniMap(true);
@@ -216,10 +196,10 @@ namespace EditorMiniMap
             bool changed = false;
 
             // Go line by line updating line visibility. Would prefer a CodeFoldsChanged event.
-            for (int index = 0; index < _splitSci1.LineCount; index++)
+            for (int index = 0; index < _sci.LineCount; index++)
             {
                 bool visible = GetLineVisible(this, index);
-                bool parterVisible = GetLineVisible(_splitSci1, index);
+                bool parterVisible = GetLineVisible(_sci, index);
 
                 // if visibility doesn't match the update
                 if (parterVisible && !visible)
@@ -249,8 +229,7 @@ namespace EditorMiniMap
 
         public void OnDragOver(Point mouse)
         {
-            var buttons = _document.SciControl == _document.SplitSci1 ? MouseButtons.Left : MouseButtons.Right;
-            ScrollMiniMap(mouse, buttons);
+            ScrollMiniMap(mouse);
         }
 
         public void OnMouseWheel(MouseEventArgs e)
@@ -261,7 +240,7 @@ namespace EditorMiniMap
         public void OnMouseClick(MouseEventArgs e)
         {
             if (!_mouseMoved)
-                ScrollMiniMap(e.Location, e.Button);
+                ScrollMiniMap(e.Location);
         }
 
         public void OnMouseLeave()
@@ -281,7 +260,7 @@ namespace EditorMiniMap
             if (_mouseDown)
             {
                 _mouseMoved = true;
-                ScrollMiniMap(e.Location, e.Button);
+                ScrollMiniMap(e.Location);
             }
 
             if (_codePopup != null)
@@ -317,7 +296,7 @@ namespace EditorMiniMap
             var controlPosition = this.PointToScreen(new Point(this.Left, this.Top));
             point = this.PointToScreen(point);
 
-            _codePopup = new CodePreview(_document);
+            _codePopup = new CodePreview(this);
             _codePopup.CenterEditor(line);
 
             if (this.Parent.Dock == DockStyle.Right)
@@ -350,60 +329,32 @@ namespace EditorMiniMap
             }
         }
 
-        private void ScrollMiniMap(Point mouse, MouseButtons buttons)
+        private void ScrollMiniMap(Point mouse)
         {
             // get the cursor position under the mouse
-            int position = this.PositionFromPoint(mouse.X, mouse.Y);
-            int line = this.LineFromPosition(position);
-            int centerLine = this.VisibleFromDocLine(line);
+            var percent = (double)mouse.Y / this.Height;
+            var centerLine = (int)(this.LinesOnScreen * percent) + this.FirstVisibleLine;
 
-            if (buttons == MouseButtons.Left)
+            // if it does not match our last position
+            if (_lastSciCenterLine != centerLine)
             {
-                // if it does not match our last position
-                if (_lastSci1CenterLine != centerLine)
-                {
-                    // Center the partner editor on the cursor line
-                    CenterSci1Editor(centerLine);
-                }
-            }
-            else if (buttons == MouseButtons.Right)
-            {
-                // if it does not match our last position
-                if (_lastSci2CenterLine != centerLine)
-                {
-                    // Center the partner editor on the cursor line
-                    CenterSci2Editor(centerLine);
-                }
+                // Center the partner editor on the cursor line
+                CenterSci1Editor(centerLine);
             }
         }
 
         private void CenterSci1Editor(int line)
         {
             // Constrain the first visible line to a reasonable number
-            int firstVisibleLine = Math.Min(Math.Max(line - (int)Math.Floor(_splitSci1.LinesOnScreen / 2.0), 0), _splitSci1.LineCount - _lastSci1LinesOnScreen + 1);
-            if (firstVisibleLine != _lastSci1FirstLine)
+            int firstVisibleLine = Math.Min(Math.Max(line - (int)Math.Floor(_sci.LinesOnScreen / 2.0), 0), _sci.LineCount + _lastSciLinesOnScreen - 1);
+            if (firstVisibleLine != _lastSciFirstLine)
             {
                 // Calculate shift then scroll
-                int delta = firstVisibleLine - _lastSci1FirstLine - 1;
-                _lastSci1FirstLine = Math.Max(firstVisibleLine, 1);
-                _splitSci1.LineScroll(0, delta);
+                int delta = firstVisibleLine - _lastSciFirstLine - 1;
+                _lastSciFirstLine = Math.Max(firstVisibleLine, 1);
+                _sci.LineScroll(0, delta);
             }
-            _lastSci1CenterLine = line;
-            UpdateMiniMap(false);
-        }
-
-        private void CenterSci2Editor(int line)
-        {
-            // Constrain the first visible line to a reasonable number
-            int firstVisibleLine = Math.Min(Math.Max(line - (int)Math.Floor(_splitSci2.LinesOnScreen / 2.0), 0), _splitSci2.LineCount - _lastSci2LinesOnScreen + 1);
-            if (firstVisibleLine != _lastSci2FirstLine)
-            {
-                // Calculate shift then scroll
-                int delta = firstVisibleLine - _lastSci2FirstLine - 1;
-                _lastSci2FirstLine = Math.Max(firstVisibleLine, 1);
-                _splitSci2.LineScroll(0, delta);
-            }
-            _lastSci2CenterLine = line;
+            _lastSciCenterLine = line;
             UpdateMiniMap(false);
         }
 
@@ -413,7 +364,11 @@ namespace EditorMiniMap
 
         private void UpdateText()
         {
-            string text = _splitSci1.Text;
+            string text = _sci.Text.Replace("�", "?") + string.Join(Environment.NewLine, new string[_sci.LinesOnScreen > 0 ? _sci.LinesOnScreen - 1 : 0]);
+
+            if (text == null)
+                return;
+
             // If text has changed, then update and perform a full update.
             if (this.Text != text)
             {
@@ -428,7 +383,7 @@ namespace EditorMiniMap
                 return;
 
             // Check to see if we've gone over our line limit
-            if (_splitSci1.LineCount > _settings.MaxLineLimit)
+            if (_sci.LineCount > _settings.MaxLineLimit)
                 Disable();
 
             if (!this.Visible)
@@ -437,8 +392,8 @@ namespace EditorMiniMap
             _updating = true;
 
             // If tab width has changed, then update
-            if (this.TabWidth != _splitSci1.TabWidth)
-                this.TabWidth = _splitSci1.TabWidth;
+            if (this.TabWidth != _sci.TabWidth)
+                this.TabWidth = _sci.TabWidth;
 
             // If the editor starts in the middle of the code, then force an update.
             if (_lastLinesOnScreen == 0 && this.LinesOnScreen > 0)
@@ -449,11 +404,11 @@ namespace EditorMiniMap
                 forceUpdate = true;
 
             // If language has changed then, update syntax language and zoom level
-            Language language = GetLanguage(_splitSci1.ConfigurationLanguage);
+            Language language = GetLanguage(_sci.ConfigurationLanguage);
             if (_lastLanguage != language || forceUpdate)
             {
                 _lastLanguage = language;
-                this.ConfigurationLanguage = _splitSci1.ConfigurationLanguage;
+                this.ConfigurationLanguage = _sci.ConfigurationLanguage;
 
                 // Get the default style font size
                 int fontSize = GetDefaultFontSize(language);
@@ -466,58 +421,48 @@ namespace EditorMiniMap
                 }
 
                 this.SetProperty("lexer.cpp.track.preprocessor", "0");
+
+                var defaultStyle = language.usestyles.FirstOrDefault(s => s.name == "default");
+                var defaultBackColor = defaultStyle.BackgroundColor;
+
+                this.MarkerDeleteAll(20);
+                this.MarkerDeleteHandle(20);
+                this.MarkerSetBack(20, defaultBackColor);
+                this.MarkerDefine(20, ScintillaNet.Enums.MarkerSymbol.Background);
+
+                foreach (var style in language.usestyles)
+                    this.StyleSetBack(style.key, PluginCore.Utilities.DataConverter.ColorToInt32(_settings.HighlightColor));
             }
 
-            int sci1FirstLine = _splitSci1.FirstVisibleLine;
-            int sci1LinesOnScreen = _splitSci1.LinesOnScreen;
-
-            int sci2FirstLine = _splitSci2.FirstVisibleLine;
-            int sci2LinesOnScreen = _splitSci2.LinesOnScreen;
+            int sci1FirstLine = _sci.FirstVisibleLine;
+            int sci1LinesOnScreen = _sci.LinesOnScreen;
 
             // Check to see if we have scrolled or resized or...
-            if (sci1FirstLine != _lastSci1FirstLine ||
-                sci1LinesOnScreen != _lastSci1LinesOnScreen ||
-                sci2FirstLine != _lastSci2FirstLine ||
-                sci2LinesOnScreen != _lastSci2LinesOnScreen ||
+            if (sci1FirstLine != _lastSciFirstLine ||
+                sci1LinesOnScreen != _lastSciLinesOnScreen ||
                 forceUpdate)
             {
+                UpdateText();
+
                 RemoveOldLineHighlights();
 
                 // Add the visible lines highlight
                 int firstDocumentLine = this.DocLineFromVisible(sci1FirstLine);
                 int lastVisibleLine = this.DocLineFromVisible(sci1FirstLine + sci1LinesOnScreen);
-                for (int line = firstDocumentLine; line < lastVisibleLine; line++)
+                int linesWithOverflow = this.LineCount + this.LinesOnScreen;
+                for (int line = 0; line < linesWithOverflow; line++)
                 {
-                    this.MarkerAdd(line, 20);
+                    if (line >= firstDocumentLine && line < lastVisibleLine)
+                        this.MarkerAdd(line, 20);
                 }
 
-                if (_splitSci2.Visible)
-                {
-                    // Add the visible split highlight
-                    int firstSplitDocumentLine = this.DocLineFromVisible(sci2FirstLine);
-                    int lastSplitVisibleLine = this.DocLineFromVisible(sci2FirstLine + sci2LinesOnScreen);
-                    for (int line = firstSplitDocumentLine; line < lastSplitVisibleLine; line++)
-                    {
-                        if (line < firstDocumentLine ||
-                            line > lastVisibleLine)
-                            this.MarkerAdd(line, 21);
-                        else
-                            this.MarkerAdd(line, 22);
-                    }
-                }
+                _lastLinesOnScreen = this.LinesOnScreen;
+                _lastSciFirstLine = sci1FirstLine;
+                _lastSciLinesOnScreen = sci1LinesOnScreen;
+                _lastSciCenterLine = _lastSciFirstLine + (int)Math.Floor(_lastSciLinesOnScreen / 2.0);
 
                 // When visible lines < line count, apply a continuous scroll so that all lines can be visible
                 ScrollMiniMap();
-
-                _lastLinesOnScreen = this.LinesOnScreen;
-                _lastSci1FirstLine = sci1FirstLine;
-                _lastSci1LinesOnScreen = sci1LinesOnScreen;
-                _lastSci1CenterLine = _lastSci1FirstLine + (int)Math.Floor(_lastSci1LinesOnScreen / 2.0);
-
-                _lastSci2FirstLine = sci2FirstLine;
-                _lastSci2LinesOnScreen = sci2LinesOnScreen;
-                _lastSci2CenterLine = _lastSci2FirstLine + (int)Math.Floor(_lastSci2LinesOnScreen / 2.0);
-                _lastSci2Visible = _splitSci2.Visible;
             }
 
             _updating = false;
@@ -526,16 +471,6 @@ namespace EditorMiniMap
         private void RemoveOldLineHighlights()
         {
             this.MarkerDeleteAll(20);
-            this.MarkerDeleteAll(21);
-            this.MarkerDeleteAll(22);
-        }
-
-        private Color BlendColors(Color c1, Color c2)
-        {
-            return Color.FromArgb((c1.A + c2.A) / 2,
-                                (c1.R + c2.R) / 2,
-                                (c1.G + c2.G) / 2,
-                                (c1.B + c2.B) / 2);
         }
 
         private void ScrollMiniMap()
@@ -545,7 +480,7 @@ namespace EditorMiniMap
             if (displayLineCount > this.LinesOnScreen)
             {
                 // Apply a continuous scroll, so that all lines will eventually be visible
-                double percent = _lastSci1FirstLine / Convert.ToDouble(displayLineCount - _lastSci1LinesOnScreen);
+                double percent = _lastSciFirstLine / Convert.ToDouble(displayLineCount - _lastSciLinesOnScreen);
                 int line = (int)Math.Floor(percent * (displayLineCount - this.LinesOnScreen));
                 int delta = line - this.FirstVisibleLine - 1;
                 this.LineScroll(0, delta);
